@@ -42,11 +42,14 @@
         }
 
         #menu, #gameOver, #pauseMenu {
-            background: rgba(0, 26, 51, 0.9);
+            background: rgba(0, 26, 51, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 3px solid #00ffff;
             border-radius: 10px;
             padding: 40px;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
         }
 
         .btn {
@@ -60,12 +63,32 @@
             border: 2px solid #00ffff;
             color: #00ffff;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             letter-spacing: 0.1em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: #00ffff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+            z-index: -1;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .btn:hover {
-            background: #00ffff;
             color: #000;
             box-shadow: 0 0 20px #00ffff;
             transform: scale(1.05);
@@ -88,11 +111,26 @@
             margin: 5px;
         }
 
-        canvas {
+        #canvasWrapper {
+            position: relative;
+            display: none;
             border: 3px solid #00ffff;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            display: none;
             background: #000a1a;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: crisp-edges;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        #gameCanvas {
+            will-change: transform;
+            z-index: 4;
         }
 
         #scoreBoard {
@@ -189,9 +227,109 @@
             font-size: 0.9em;
             opacity: 0.7;
         }
+
+        #fpsCounter {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+        }
+
+        #qualitySettings {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 26, 51, 0.95);
+            backdrop-filter: blur(10px);
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            padding: 30px;
+            z-index: 100;
+            min-width: 400px;
+        }
+
+        .quality-option {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quality-btn {
+            padding: 5px 15px;
+            font-size: 0.9em;
+        }
+
+        #fullscreenBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1000;
+            display: none;
+            transition: all 0.3s;
+        }
+
+        #fullscreenBtn:hover {
+            background: #00ffff;
+            color: #000;
+        }
+
+        .shake {
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 0); }
+            20%, 40%, 60%, 80% { transform: translate(5px, 0); }
+        }
     </style>
 </head>
 <body>
+    <div id="fpsCounter">FPS: 0</div>
+    <button id="fullscreenBtn" onclick="toggleFullscreen()">⛶</button>
+    
+    <div id="qualitySettings">
+        <h2 style="margin-bottom: 20px;">Grafik-Einstellungen</h2>
+        <div class="quality-option">
+            <span>Qualität:</span>
+            <div>
+                <button class="btn small quality-btn" onclick="setQuality('low')">Low</button>
+                <button class="btn small quality-btn" onclick="setQuality('medium')">Medium</button>
+                <button class="btn small quality-btn active" onclick="setQuality('high')">High</button>
+                <button class="btn small quality-btn" onclick="setQuality('ultra')">Ultra</button>
+            </div>
+        </div>
+        <div class="quality-option">
+            <span>Partikel:</span>
+            <button class="btn small quality-btn" onclick="toggleParticles()">An/Aus</button>
+        </div>
+        <div class="quality-option">
+            <span>Glow-Effekte:</span>
+            <button class="btn small quality-btn" onclick="toggleGlow()">An/Aus</button>
+        </div>
+        <div class="quality-option">
+            <span>FPS-Anzeige:</span>
+            <button class="btn small quality-btn" onclick="toggleFPS()">An/Aus</button>
+        </div>
+        <button class="btn" onclick="closeQualitySettings()">Schließen</button>
+    </div>
+    
     <div id="gameContainer">
         <h1>TRON</h1>
         
@@ -199,6 +337,7 @@
             <h2 style="margin-bottom: 30px;">Wähle deinen Modus</h2>
             <button class="btn" onclick="showDifficultyMenu()">Single Player</button>
             <button class="btn player2" onclick="showRoundMenu('multi')">2 Player</button>
+            <button class="btn small" onclick="showQualitySettings()" style="margin-top: 20px;">⚙️ Einstellungen</button>
             <div style="margin-top: 30px; font-size: 0.9em; opacity: 0.7;">
                 <p>Spieler 1: Pfeiltasten ↑ ↓ ← →</p>
                 <p>Spieler 2: WASD</p>
@@ -229,7 +368,13 @@
 
         <div id="countdown"></div>
 
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="canvasWrapper">
+            <canvas id="bgCanvas" width="800" height="600"></canvas>
+            <canvas id="gridCanvas" width="800" height="600"></canvas>
+            <canvas id="trailCanvas" width="800" height="600"></canvas>
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <canvas id="particleCanvas" width="800" height="600"></canvas>
+        </div>
 
         <div id="scoreBoard">
             <div class="score player1">Spieler 1: <span id="score1">0</span></div>
@@ -256,8 +401,20 @@
         // ============================================================================
         // CONSTANTS AND DOM ELEMENTS
         // ============================================================================
+        
+        // Multi-layer canvas system for performance optimization
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+        const gridCanvas = document.getElementById('gridCanvas');
+        const gridCtx = gridCanvas.getContext('2d', { alpha: true });
+        const trailCanvas = document.getElementById('trailCanvas');
+        const trailCtx = trailCanvas.getContext('2d', { alpha: true });
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        const particleCanvas = document.getElementById('particleCanvas');
+        const particleCtx = particleCanvas.getContext('2d', { alpha: true });
+        
+        const canvasWrapper = document.getElementById('canvasWrapper');
         const menu = document.getElementById('menu');
         const difficultyMenu = document.getElementById('difficultyMenu');
         const roundMenu = document.getElementById('roundMenu');
@@ -270,10 +427,14 @@
         const roundInfoEl = document.getElementById('roundInfo');
         const countdownEl = document.getElementById('countdown');
         const gameInfoEl = document.getElementById('gameInfo');
+        const fpsCounterEl = document.getElementById('fpsCounter');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
 
         // Game constants
         const gridSize = 10;
-        const baseSpeed = 80; // ms per frame
+        const TARGET_FPS = 60;
+        const FRAME_TIME = 1000 / TARGET_FPS;
+        const baseSpeed = 80; // ms per game update
         const CANVAS_WIDTH = 800;
         const CANVAS_HEIGHT = 600;
 
@@ -286,9 +447,23 @@
         let gamePaused = false;
         let animationId;
         let lastUpdateTime = 0;
+        let lastFrameTime = 0;
         let maxRounds = 3;
         let currentRound = 0;
-        let particles = [];
+        let cameraShake = 0;
+
+        // Quality settings
+        let qualitySettings = {
+            particlesEnabled: true,
+            glowEnabled: true,
+            quality: 'high',
+            showFPS: false
+        };
+
+        // Performance monitoring
+        let frameCount = 0;
+        let fps = 0;
+        let lastFpsUpdate = 0;
 
         // Input buffer for smooth controls
         let player1InputBuffer = null;
@@ -301,6 +476,7 @@
             dx: gridSize,
             dy: 0,
             trail: [],
+            trailSet: new Set(), // For O(1) collision detection
             color: '#00ffff',
             score: 0,
             alive: true
@@ -312,10 +488,151 @@
             dx: -gridSize,
             dy: 0,
             trail: [],
+            trailSet: new Set(), // For O(1) collision detection
             color: '#ff6600',
             score: 0,
             alive: true
         };
+
+        // ============================================================================
+        // SPATIAL HASH GRID - O(1) Collision Detection
+        // ============================================================================
+        class SpatialHashGrid {
+            constructor(cellSize) {
+                this.cellSize = cellSize;
+                this.grid = new Map();
+            }
+            
+            insert(x, y) {
+                const key = this.getKey(x, y);
+                this.grid.set(key, true);
+            }
+            
+            check(x, y) {
+                const key = this.getKey(x, y);
+                return this.grid.has(key);
+            }
+            
+            clear() {
+                this.grid.clear();
+            }
+            
+            getKey(x, y) {
+                const cellX = Math.floor(x / this.cellSize);
+                const cellY = Math.floor(y / this.cellSize);
+                return `${cellX},${cellY}`;
+            }
+        }
+
+        const spatialGrid = new SpatialHashGrid(gridSize);
+
+        // ============================================================================
+        // PARTICLE SYSTEM WITH OBJECT POOLING
+        // ============================================================================
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = 0;
+                this.y = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.life = 0;
+                this.decay = 0.02;
+                this.color = '#fff';
+                this.size = 2;
+                this.active = false;
+            }
+
+            init(x, y, color, size = 2) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.color = color;
+                this.size = size;
+                this.active = true;
+            }
+
+            update() {
+                if (!this.active) return;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                
+                if (this.life <= 0) {
+                    this.active = false;
+                }
+            }
+
+            draw(ctx, glowEnabled) {
+                if (!this.active) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                
+                if (glowEnabled) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                }
+                
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        class ParticlePool {
+            constructor(size) {
+                this.pool = [];
+                for (let i = 0; i < size; i++) {
+                    this.pool.push(new Particle());
+                }
+                this.activeIndex = 0;
+            }
+            
+            get() {
+                // Find inactive particle or reuse oldest
+                for (let i = 0; i < this.pool.length; i++) {
+                    if (!this.pool[i].active) {
+                        return this.pool[i];
+                    }
+                }
+                
+                // If all active, reuse the current index
+                const particle = this.pool[this.activeIndex];
+                this.activeIndex = (this.activeIndex + 1) % this.pool.length;
+                return particle;
+            }
+            
+            update() {
+                for (let i = 0; i < this.pool.length; i++) {
+                    this.pool[i].update();
+                }
+            }
+            
+            draw(ctx, glowEnabled) {
+                for (let i = 0; i < this.pool.length; i++) {
+                    this.pool[i].draw(ctx, glowEnabled);
+                }
+            }
+            
+            getActiveCount() {
+                let count = 0;
+                for (let i = 0; i < this.pool.length; i++) {
+                    if (this.pool[i].active) count++;
+                }
+                return count;
+            }
+        }
+
+        const particlePool = new ParticlePool(500);
 
         // ============================================================================
         // MENU FUNCTIONS
@@ -355,6 +672,76 @@
             event.target.classList.add('active');
         }
 
+        // Quality settings functions
+        function showQualitySettings() {
+            document.getElementById('qualitySettings').style.display = 'block';
+        }
+
+        function closeQualitySettings() {
+            document.getElementById('qualitySettings').style.display = 'none';
+        }
+
+        function setQuality(quality) {
+            qualitySettings.quality = quality;
+            
+            // Update button states
+            document.querySelectorAll('#qualitySettings .quality-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Apply quality presets
+            switch(quality) {
+                case 'low':
+                    qualitySettings.particlesEnabled = false;
+                    qualitySettings.glowEnabled = false;
+                    break;
+                case 'medium':
+                    qualitySettings.particlesEnabled = true;
+                    qualitySettings.glowEnabled = false;
+                    break;
+                case 'high':
+                    qualitySettings.particlesEnabled = true;
+                    qualitySettings.glowEnabled = true;
+                    break;
+                case 'ultra':
+                    qualitySettings.particlesEnabled = true;
+                    qualitySettings.glowEnabled = true;
+                    break;
+            }
+            
+            // Redraw static layers
+            if (gameRunning) {
+                drawBackground();
+                drawGrid();
+            }
+        }
+
+        function toggleParticles() {
+            qualitySettings.particlesEnabled = !qualitySettings.particlesEnabled;
+        }
+
+        function toggleGlow() {
+            qualitySettings.glowEnabled = !qualitySettings.glowEnabled;
+            if (gameRunning) {
+                drawBackground();
+                drawGrid();
+            }
+        }
+
+        function toggleFPS() {
+            qualitySettings.showFPS = !qualitySettings.showFPS;
+            fpsCounterEl.style.display = qualitySettings.showFPS ? 'block' : 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
         function startGameWithRounds(rounds) {
             maxRounds = rounds;
             currentRound = 0;
@@ -368,16 +755,80 @@
         // GAME INITIALIZATION
         // ============================================================================
         function startGame() {
-            canvas.style.display = 'block';
+            canvasWrapper.style.display = 'block';
             scoreBoard.style.display = 'block';
             gameInfoEl.style.display = 'block';
             gameOverDiv.style.display = 'none';
             pauseMenu.style.display = 'none';
+            fullscreenBtn.style.display = 'block';
+            
+            // Draw static layers once
+            drawBackground();
+            drawGrid();
             
             resetPlayers();
             updateScores();
             updateGameInfo();
             showCountdown();
+        }
+
+        // Draw background layer (static, only once)
+        function drawBackground() {
+            bgCtx.fillStyle = '#000a1a';
+            bgCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Add animated background particles for atmosphere
+            if (qualitySettings.quality === 'ultra') {
+                bgCtx.fillStyle = 'rgba(0, 255, 255, 0.02)';
+                for (let i = 0; i < 50; i++) {
+                    const x = Math.random() * CANVAS_WIDTH;
+                    const y = Math.random() * CANVAS_HEIGHT;
+                    const size = Math.random() * 2;
+                    bgCtx.fillRect(x, y, size, size);
+                }
+            }
+        }
+
+        // Draw grid layer (static, only when needed)
+        function drawGrid() {
+            // Clear grid canvas
+            gridCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            if (qualitySettings.quality === 'low') {
+                // Minimal grid for low quality
+                gridCtx.strokeStyle = 'rgba(0, 255, 255, 0.03)';
+                gridCtx.lineWidth = 1;
+                
+                for (let i = 0; i < CANVAS_WIDTH; i += gridSize * 10) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(i, 0);
+                    gridCtx.lineTo(i, CANVAS_HEIGHT);
+                    gridCtx.stroke();
+                }
+                for (let i = 0; i < CANVAS_HEIGHT; i += gridSize * 10) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(0, i);
+                    gridCtx.lineTo(CANVAS_WIDTH, i);
+                    gridCtx.stroke();
+                }
+            } else {
+                // Enhanced grid for higher quality
+                gridCtx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+                gridCtx.lineWidth = 1;
+                
+                for (let i = 0; i < CANVAS_WIDTH; i += gridSize * 5) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(i, 0);
+                    gridCtx.lineTo(i, CANVAS_HEIGHT);
+                    gridCtx.stroke();
+                }
+                for (let i = 0; i < CANVAS_HEIGHT; i += gridSize * 5) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(0, i);
+                    gridCtx.lineTo(CANVAS_WIDTH, i);
+                    gridCtx.stroke();
+                }
+            }
         }
 
         function showCountdown() {
@@ -397,13 +848,22 @@
                     gameRunning = true;
                     gamePaused = false;
                     lastUpdateTime = Date.now();
-                    gameLoop();
+                    lastFrameTime = 0;
+                    lastFpsUpdate = 0;
+                    frameCount = 0;
+                    animationId = requestAnimationFrame(gameLoop);
                 }
             }, 1000);
         }
 
         function resetPlayers() {
             currentRound++;
+            
+            // Clear trail canvas
+            trailCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Clear spatial grid
+            spatialGrid.clear();
             
             // Symmetrische Startpositionen
             player1 = {
@@ -412,6 +872,7 @@
                 dx: gridSize,
                 dy: 0,
                 trail: [{x: 100, y: 300}],
+                trailSet: new Set(['100,300']),
                 color: '#00ffff',
                 score: player1.score,
                 alive: true
@@ -423,14 +884,19 @@
                 dx: -gridSize,
                 dy: 0,
                 trail: [{x: 700, y: 300}],
+                trailSet: new Set(['700,300']),
                 color: '#ff6600',
                 score: player2.score,
                 alive: true
             };
 
+            // Insert starting positions into spatial grid
+            spatialGrid.insert(player1.x, player1.y);
+            spatialGrid.insert(player2.x, player2.y);
+
             player1InputBuffer = null;
             player2InputBuffer = null;
-            particles = [];
+            cameraShake = 0;
         }
 
         function updateScores() {
@@ -500,7 +966,7 @@
         // AI ALGORITHMS
         // ============================================================================
         
-        // Flood-fill algorithm to calculate available space
+        // Flood-fill algorithm to calculate available space (optimized)
         function calculateAvailableSpace(startX, startY, maxDepth = 100) {
             const visited = new Set();
             const queue = [{x: startX, y: startY, depth: 0}];
@@ -512,7 +978,7 @@
 
                 if (visited.has(key)) continue;
                 if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) continue;
-                if (isPositionOccupied(x, y)) continue;
+                if (isPositionOccupiedFast(x, y)) continue; // Use optimized version
                 if (depth > maxDepth) continue;
 
                 visited.add(key);
@@ -528,16 +994,7 @@
             return count;
         }
 
-        function isPositionOccupied(x, y) {
-            // Check trails (excluding current head positions)
-            for (let i = 0; i < player1.trail.length - 1; i++) {
-                if (player1.trail[i].x === x && player1.trail[i].y === y) return true;
-            }
-            for (let i = 0; i < player2.trail.length - 1; i++) {
-                if (player2.trail[i].x === x && player2.trail[i].y === y) return true;
-            }
-            return false;
-        }
+
 
         function aiMove() {
             const directions = [
@@ -639,71 +1096,61 @@
         }
 
         // ============================================================================
-        // COLLISION DETECTION
+        // COLLISION DETECTION - OPTIMIZED WITH SPATIAL HASH GRID
         // ============================================================================
         function checkCollisionAt(x, y) {
-            // Wall collision
+            // Wall collision (early exit)
             if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
                 return true;
             }
 
-            // Trail collision (excluding own current head position)
-            for (let i = 0; i < player1.trail.length - 1; i++) {
-                if (player1.trail[i].x === x && player1.trail[i].y === y) {
-                    return true;
-                }
-            }
-            for (let i = 0; i < player2.trail.length - 1; i++) {
-                if (player2.trail[i].x === x && player2.trail[i].y === y) {
-                    return true;
-                }
-            }
+            // O(1) collision check using spatial hash grid
+            return spatialGrid.check(x, y);
+        }
 
-            return false;
+        // Optimized position check for AI using Set (O(1))
+        function isPositionOccupiedFast(x, y) {
+            if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
+                return true;
+            }
+            
+            const key = `${x},${y}`;
+            return player1.trailSet.has(key) || player2.trailSet.has(key);
         }
 
         // ============================================================================
-        // PARTICLE SYSTEM
+        // EXPLOSION EFFECTS
         // ============================================================================
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 8;
-                this.vy = (Math.random() - 0.5) * 8;
-                this.life = 1;
-                this.decay = 0.02;
-                this.color = color;
-                this.size = Math.random() * 4 + 2;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.restore();
-            }
-
-            isDead() {
-                return this.life <= 0;
-            }
-        }
-
         function createExplosion(x, y, color) {
-            for (let i = 0; i < 30; i++) {
-                particles.push(new Particle(x, y, color));
+            if (!qualitySettings.particlesEnabled) return;
+            
+            // Get particle count based on quality
+            let particleCount = 30;
+            if (qualitySettings.quality === 'ultra') particleCount = 80;
+            else if (qualitySettings.quality === 'high') particleCount = 50;
+            else if (qualitySettings.quality === 'medium') particleCount = 30;
+            else particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = particlePool.get();
+                const size = Math.random() * 4 + 2;
+                particle.init(x, y, color, size);
             }
+            
+            // Camera shake effect
+            cameraShake = 10;
+        }
+
+        function createTrailSparkle(x, y, color) {
+            if (!qualitySettings.particlesEnabled) return;
+            if (qualitySettings.quality === 'low') return;
+            if (Math.random() > 0.05) return; // Only 5% chance
+            
+            const particle = particlePool.get();
+            particle.init(x, y, color, 1);
+            particle.vx *= 0.3;
+            particle.vy *= 0.3;
+            particle.decay = 0.05;
         }
 
         // ============================================================================
@@ -734,7 +1181,7 @@
             const newP2X = player2.x + player2.dx;
             const newP2Y = player2.y + player2.dy;
 
-            // Check collisions BEFORE moving
+            // Check collisions BEFORE moving (early exit optimization)
             const p1Collision = checkCollisionAt(newP1X, newP1Y);
             const p2Collision = checkCollisionAt(newP2X, newP2Y);
 
@@ -764,84 +1211,121 @@
             player2.x = newP2X;
             player2.y = newP2Y;
 
-            // Add to trail
+            // Add to trail (optimized with Set for O(1) lookup)
             player1.trail.push({x: player1.x, y: player1.y});
-            player2.trail.push({x: player2.x, y: player2.y});
-
-            // Update particles
-            particles = particles.filter(p => {
-                p.update();
-                return !p.isDead();
-            });
-        }
-
-        // ============================================================================
-        // DRAWING
-        // ============================================================================
-        function draw() {
-            // Clear canvas
-            ctx.fillStyle = '#000a1a';
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            // Draw subtle grid
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < CANVAS_WIDTH; i += gridSize * 5) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, CANVAS_HEIGHT);
-                ctx.stroke();
-            }
-            for (let i = 0; i < CANVAS_HEIGHT; i += gridSize * 5) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(CANVAS_WIDTH, i);
-                ctx.stroke();
-            }
-
-            // Draw player 1 trail with fade effect
-            drawTrail(player1);
+            player1.trailSet.add(`${player1.x},${player1.y}`);
+            spatialGrid.insert(player1.x, player1.y);
             
-            // Draw player 2 trail with fade effect
-            drawTrail(player2);
+            player2.trail.push({x: player2.x, y: player2.y});
+            player2.trailSet.add(`${player2.x},${player2.y}`);
+            spatialGrid.insert(player2.x, player2.y);
 
-            // Draw player heads with direction indicators
-            drawPlayer(player1);
-            drawPlayer(player2);
+            // Create trail sparkles
+            createTrailSparkle(player1.x, player1.y, player1.color);
+            createTrailSparkle(player2.x, player2.y, player2.color);
 
-            // Draw particles
-            particles.forEach(p => p.draw(ctx));
-
-            ctx.shadowBlur = 0;
-        }
-
-        function drawTrail(player) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = player.color;
-            ctx.strokeStyle = player.color;
-            ctx.lineWidth = 5;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            // Draw trail with fade effect on older segments
-            for (let i = 0; i < player.trail.length - 1; i++) {
-                const opacity = 0.3 + (i / player.trail.length) * 0.7; // Fade from 0.3 to 1.0
-                ctx.globalAlpha = opacity;
-                ctx.beginPath();
-                ctx.moveTo(player.trail[i].x + gridSize/2, player.trail[i].y + gridSize/2);
-                ctx.lineTo(player.trail[i+1].x + gridSize/2, player.trail[i+1].y + gridSize/2);
-                ctx.stroke();
+            // Update camera shake
+            if (cameraShake > 0) {
+                cameraShake *= 0.9;
+                if (cameraShake < 0.1) cameraShake = 0;
             }
-            ctx.globalAlpha = 1.0;
         }
 
-        function drawPlayer(player) {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = player.color;
+        // ============================================================================
+        // DRAWING - OPTIMIZED WITH MULTI-LAYER SYSTEM
+        // ============================================================================
+        
+        // Draw trails incrementally on trail canvas (not cleared each frame)
+        function drawTrailIncremental(player) {
+            if (player.trail.length < 2) return;
+            
+            const lastIndex = player.trail.length - 1;
+            const current = player.trail[lastIndex];
+            const previous = player.trail[lastIndex - 1];
+            
+            // Use compositing for glow effect
+            if (qualitySettings.glowEnabled) {
+                trailCtx.shadowBlur = 15;
+                trailCtx.shadowColor = player.color;
+            } else {
+                trailCtx.shadowBlur = 0;
+            }
+            
+            // Create gradient from previous to current position
+            const gradient = trailCtx.createLinearGradient(
+                previous.x + gridSize/2, previous.y + gridSize/2,
+                current.x + gridSize/2, current.y + gridSize/2
+            );
+            
+            // Opacity based on position in trail
+            const opacity = 0.4 + (lastIndex / player.trail.length) * 0.6;
+            gradient.addColorStop(0, player.color + '66'); // Semi-transparent
+            gradient.addColorStop(1, player.color + 'ff'); // Opaque
+            
+            trailCtx.strokeStyle = qualitySettings.quality === 'low' ? player.color : gradient;
+            trailCtx.lineWidth = qualitySettings.quality === 'ultra' ? 6 : 5;
+            trailCtx.lineCap = 'round';
+            trailCtx.lineJoin = 'round';
+            trailCtx.globalAlpha = opacity;
+            
+            trailCtx.beginPath();
+            trailCtx.moveTo(previous.x + gridSize/2, previous.y + gridSize/2);
+            trailCtx.lineTo(current.x + gridSize/2, current.y + gridSize/2);
+            trailCtx.stroke();
+            
+            trailCtx.globalAlpha = 1.0;
+            trailCtx.shadowBlur = 0;
+        }
+
+        // Draw player heads and effects (cleared each frame)
+        function drawPlayers() {
+            // Clear only the player layer
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Apply camera shake if active
+            if (cameraShake > 0) {
+                const shakeX = (Math.random() - 0.5) * cameraShake;
+                const shakeY = (Math.random() - 0.5) * cameraShake;
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+            }
+            
+            // Draw both players
+            drawPlayerHead(player1);
+            drawPlayerHead(player2);
+            
+            if (cameraShake > 0) {
+                ctx.restore();
+            }
+        }
+
+        function drawPlayerHead(player) {
+            // Enhanced glow for player heads
+            if (qualitySettings.glowEnabled) {
+                ctx.shadowBlur = qualitySettings.quality === 'ultra' ? 30 : 20;
+                ctx.shadowColor = player.color;
+            }
+            
             ctx.fillStyle = player.color;
             
-            // Draw head
-            ctx.fillRect(player.x, player.y, gridSize, gridSize);
+            // Draw head with rounded corners for ultra quality
+            if (qualitySettings.quality === 'ultra') {
+                const radius = 2;
+                ctx.beginPath();
+                ctx.moveTo(player.x + radius, player.y);
+                ctx.lineTo(player.x + gridSize - radius, player.y);
+                ctx.quadraticCurveTo(player.x + gridSize, player.y, player.x + gridSize, player.y + radius);
+                ctx.lineTo(player.x + gridSize, player.y + gridSize - radius);
+                ctx.quadraticCurveTo(player.x + gridSize, player.y + gridSize, player.x + gridSize - radius, player.y + gridSize);
+                ctx.lineTo(player.x + radius, player.y + gridSize);
+                ctx.quadraticCurveTo(player.x, player.y + gridSize, player.x, player.y + gridSize - radius);
+                ctx.lineTo(player.x, player.y + radius);
+                ctx.quadraticCurveTo(player.x, player.y, player.x + radius, player.y);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                ctx.fillRect(player.x, player.y, gridSize, gridSize);
+            }
 
             // Draw direction indicator (arrow/wedge)
             ctx.save();
@@ -856,7 +1340,9 @@
             
             ctx.rotate(angle);
             
-            // Draw arrow
+            // Draw arrow with glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
             ctx.beginPath();
             ctx.moveTo(gridSize/2 + 3, 0);
             ctx.lineTo(-gridSize/4, -gridSize/3);
@@ -866,21 +1352,60 @@
             ctx.fill();
             
             ctx.restore();
+            ctx.shadowBlur = 0;
+        }
+
+        // Main draw function
+        function draw() {
+            // Trails are drawn incrementally, not cleared
+            drawTrailIncremental(player1);
+            drawTrailIncremental(player2);
+            
+            // Clear and draw player heads (dynamic layer)
+            drawPlayers();
+            
+            // Clear and draw particles (separate layer)
+            particleCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            particlePool.draw(particleCtx, qualitySettings.glowEnabled);
         }
 
         // ============================================================================
-        // GAME LOOP
+        // GAME LOOP - OPTIMIZED WITH 60 FPS LOCK AND DELTA-TIME
         // ============================================================================
-        function gameLoop() {
-            if (!gameRunning || gamePaused) return;
+        function gameLoop(timestamp) {
+            if (!gameRunning || gamePaused) {
+                animationId = requestAnimationFrame(gameLoop);
+                return;
+            }
 
+            // Calculate delta time
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            const deltaTime = timestamp - lastFrameTime;
+            
+            // FPS monitoring
+            frameCount++;
+            if (timestamp - lastFpsUpdate >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = timestamp;
+                
+                if (qualitySettings.showFPS) {
+                    fpsCounterEl.textContent = `FPS: ${fps}`;
+                }
+            }
+
+            // Game update logic (fixed timestep)
             const currentTime = Date.now();
             if (currentTime - lastUpdateTime >= baseSpeed) {
                 update();
+                particlePool.update(); // Update particles
                 lastUpdateTime = currentTime;
             }
 
+            // Rendering (every frame for smooth 60fps)
             draw();
+            
+            lastFrameTime = timestamp;
             animationId = requestAnimationFrame(gameLoop);
         }
 
@@ -889,12 +1414,22 @@
         // ============================================================================
         function endRound(message, winner) {
             gameRunning = false;
-            cancelAnimationFrame(animationId);
+            
+            // Apply camera shake effect
+            if (canvasWrapper) {
+                canvasWrapper.classList.add('shake');
+                setTimeout(() => canvasWrapper.classList.remove('shake'), 300);
+            }
             
             // Continue animation for particles
-            const particleAnimation = () => {
-                draw();
-                if (particles.length > 0) {
+            const particleAnimation = (timestamp) => {
+                particlePool.update();
+                
+                // Only redraw particle layer
+                particleCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                particlePool.draw(particleCtx, qualitySettings.glowEnabled);
+                
+                if (particlePool.getActiveCount() > 0) {
                     requestAnimationFrame(particleAnimation);
                 }
             };
@@ -937,9 +1472,10 @@
         function backToMenu() {
             gameOverDiv.style.display = 'none';
             pauseMenu.style.display = 'none';
-            canvas.style.display = 'none';
+            canvasWrapper.style.display = 'none';
             scoreBoard.style.display = 'none';
             gameInfoEl.style.display = 'none';
+            fullscreenBtn.style.display = 'none';
             menu.classList.remove('hidden');
             player1.score = 0;
             player2.score = 0;
@@ -947,7 +1483,51 @@
             updateScores();
             gameRunning = false;
             gamePaused = false;
+            cancelAnimationFrame(animationId);
         }
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        // Set up high-DPI canvas support
+        function setupHighDPI() {
+            const dpr = window.devicePixelRatio || 1;
+            
+            if (dpr > 1 && qualitySettings.quality !== 'low') {
+                [bgCanvas, gridCanvas, trailCanvas, canvas, particleCanvas].forEach(cvs => {
+                    const width = cvs.width;
+                    const height = cvs.height;
+                    
+                    cvs.width = width * dpr;
+                    cvs.height = height * dpr;
+                    cvs.style.width = width + 'px';
+                    cvs.style.height = height + 'px';
+                    
+                    const context = cvs.getContext('2d');
+                    context.scale(dpr, dpr);
+                });
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            setupHighDPI();
+            
+            // Handle window resize for responsive design
+            window.addEventListener('resize', () => {
+                // Could implement canvas scaling here if needed
+            });
+            
+            // Handle fullscreen changes
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    fullscreenBtn.textContent = '⛶';
+                } else {
+                    fullscreenBtn.textContent = '⛶';
+                }
+            });
+        });
     </script>
 </body>
 </html>
