@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 ULTIMATE GAMING HUB 🎮</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+            color: #00ffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        /* ========== HUB STYLES ========== */
+        #hubContainer {
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 1s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #hubContainer header {
+            text-align: center;
+            font-size: 4em;
+            margin-bottom: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff, 0 0 80px #00ffff;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff; }
+            to { text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff, 0 0 90px #00ffff, 0 0 120px #00ffff; }
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+        
+        .game-card {
+            background: rgba(10, 20, 40, 0.6);
+            backdrop-filter: blur(10px);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0,255,255,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .game-card:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            border-color: #ff00ff;
+        }
+        
+        .game-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .game-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .game-desc {
+            font-size: 0.9em;
+            opacity: 0.7;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ========== GAME CONTAINER STYLES ========== */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #gameContainer.hidden {
+            display: none;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            border-bottom: 2px solid #00ffff;
+        }
+        
+        .game-header button {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        
+        .game-header button:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        #gameTitle {
+            font-size: 1.8em;
+            text-shadow: 0 0 10px #00ffff;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        #score {
+            font-size: 1.2em;
+            margin-left: 20px;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            background: #000;
+            image-rendering: crisp-edges;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+        }
+        
+        .controls-info {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        /* ========== GAME SETUP MENU ========== */
+        #setupMenu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            z-index: 2000;
+            min-width: 400px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #setupMenu.hidden {
+            display: none;
+        }
+        
+        .setup-section {
+            margin: 20px 0;
+        }
+        
+        .setup-section h3 {
+            margin-bottom: 15px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        
+        .option-btn {
+            margin: 5px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .option-btn:hover, .option-btn.active {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        /* ========== GAME OVER OVERLAY ========== */
+        #gameOverlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border: 3px solid #ff00ff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            z-index: 100;
+            min-width: 300px;
+        }
+        
+        #gameOverlay.hidden {
+            display: none;
+        }
+        
+        #gameOverlay h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+        
+        #finalScore {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        
+        /* ========== FPS COUNTER ========== */
+        #fpsCounter {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #00ff00;
+            z-index: 3000;
+        }
+        
+        #fpsCounter.hidden {
+            display: none;
+        }
+        
+        /* ========== SETTINGS BUTTON ========== */
+        #settingsBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            color: #00ffff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 3000;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #settingsBtn:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+            transform: rotate(90deg);
+        }
+        
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            #hubContainer header {
+                font-size: 2em;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+            
+            .game-card {
+                padding: 20px;
+            }
+            
+            #gameCanvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- FPS Counter -->
+    <div id="fpsCounter" class="hidden">FPS: 60</div>
+    
+    <!-- Settings Button (visible on hub) -->
+    <div id="settingsBtn" onclick="toggleFPS()">⚙</div>
+    
+    <!-- Hub Container (Landing Page) -->
+    <div id="hubContainer">
+        <header>🎮 GAMING HUB 🎮</header>
+        <div class="games-grid">
+            <div class="game-card" onclick="startGame('tron')">
+                <span class="game-icon">🏍️</span>
+                <div class="game-title">TRON</div>
+                <div class="game-desc">Light cycles trail collision</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('snake')">
+                <span class="game-icon">🐍</span>
+                <div class="game-title">SNAKE</div>
+                <div class="game-desc">Classic snake with growth</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('tetris')">
+                <span class="game-icon">🧱</span>
+                <div class="game-title">TETRIS</div>
+                <div class="game-desc">Tetromino line clearing</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('pong')">
+                <span class="game-icon">🏓</span>
+                <div class="game-title">PONG</div>
+                <div class="game-desc">Classic paddle game</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('breakout')">
+                <span class="game-icon">🎯</span>
+                <div class="game-title">BREAKOUT</div>
+                <div class="game-desc">Brick breaker physics</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('invaders')">
+                <span class="game-icon">👾</span>
+                <div class="game-title">SPACE INVADERS</div>
+                <div class="game-desc">Alien shooter defense</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('asteroids')">
+                <span class="game-icon">☄️</span>
+                <div class="game-title">ASTEROIDS</div>
+                <div class="game-desc">Space shooter rotation</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('flappy')">
+                <span class="game-icon">🐦</span>
+                <div class="game-title">FLAPPY BIRD</div>
+                <div class="game-desc">Tap to fly obstacle</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('match3')">
+                <span class="game-icon">💎</span>
+                <div class="game-title">MATCH-3</div>
+                <div class="game-desc">Gem matching puzzle</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('2048')">
+                <span class="game-icon">🎲</span>
+                <div class="game-title">2048</div>
+                <div class="game-desc">Number sliding puzzle</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Container (Fullscreen Overlay) -->
+    <div id="gameContainer" class="hidden">
+        <div class="game-header">
+            <button onclick="backToHub()">← BACK</button>
+            <button onclick="fullscreenManager.toggle()">⛶ FULLSCREEN (F)</button>
+            <h2 id="gameTitle">GAME</h2>
+            <span id="score">Score: 0</span>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="controls-info" id="controlsInfo">
+            Controls: Arrow Keys | SPACE: Pause | P: Pause | R: Restart | F: Fullscreen
+        </div>
+        
+        <!-- Game Over Overlay -->
+        <div id="gameOverlay" class="hidden">
+            <h2 id="gameOverTitle">GAME OVER</h2>
+            <div id="finalScore">Score: 0</div>
+            <button class="option-btn" onclick="restartGame()">PLAY AGAIN (R)</button>
+            <button class="option-btn" onclick="backToHub()">BACK TO HUB</button>
+        </div>
+    </div>
+    
+    <!-- Setup Menu -->
+    <div id="setupMenu" class="hidden">
+        <h2 style="text-align: center; margin-bottom: 30px; text-shadow: 0 0 10px #00ffff;">GAME SETUP</h2>
+        
+        <div class="setup-section">
+            <h3>Mode</h3>
+            <button class="option-btn active" data-mode="solo">SOLO</button>
+            <button class="option-btn" data-mode="vsai">VS AI</button>
+            <button class="option-btn" data-mode="2player">2 PLAYER</button>
+            <button class="option-btn" data-mode="aivai">AI VS AI</button>
+        </div>
+        
+        <div class="setup-section">
+            <h3>AI Difficulty</h3>
+            <button class="option-btn" data-difficulty="easy">EASY</button>
+            <button class="option-btn active" data-difficulty="medium">MEDIUM</button>
+            <button class="option-btn" data-difficulty="hard">HARD</button>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="option-btn" style="border-color: #ff00ff; color: #ff00ff;" onclick="launchGame()">START GAME</button>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================================================
+        // GLOBAL VARIABLES & CONSTANTS
+        // ============================================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hubContainer = document.getElementById('hubContainer');
+        const gameContainer = document.getElementById('gameContainer');
+        const setupMenu = document.getElementById('setupMenu');
+        const gameOverlay = document.getElementById('gameOverlay');
+        const scoreDisplay = document.getElementById('score');
+        const gameTitleDisplay = document.getElementById('gameTitle');
+        const fpsCounter = document.getElementById('fpsCounter');
+        const settingsBtn = document.getElementById('settingsBtn');
+        
+        let currentGame = null;
+        let gameEngine = null;
+        let animationId = null;
+        let showFPS = false;
+        let lastFrameTime = 0;
+        let frameCount = 0;
+        let fps = 60;
+        let lastFpsUpdate = 0;
+        
+        // Game settings
+        let gameSettings = {
+            mode: 'solo',
+            difficulty: 'medium'
+        };
+        
+        // ============================================================================
+        // FULLSCREEN MANAGER
+        // ============================================================================
+        class FullscreenManager {
+            constructor() {
+                this.isFullscreen = false;
+                // Listen to ALL fullscreen events
+                document.addEventListener('fullscreenchange', () => this.updateState());
+                document.addEventListener('webkitfullscreenchange', () => this.updateState());
+                document.addEventListener('mozfullscreenchange', () => this.updateState());
+                document.addEventListener('MSFullscreenChange', () => this.updateState());
+            }
+            
+            updateState() {
+                this.isFullscreen = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.mozFullScreenElement ||
+                    document.msFullscreenElement
+                );
+            }
+            
+            toggle() {
+                if (this.isFullscreen) {
+                    this.exit();
+                } else {
+                    this.enter();
+                }
+            }
+            
+            enter() {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
+                else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+            }
+            
+            exit() {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            }
+        }
+        
+        const fullscreenManager = new FullscreenManager();
+        
+        // ============================================================================
+        // PARTICLE SYSTEM WITH OBJECT POOLING
+        // ============================================================================
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                this.x = 0;
+                this.y = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.life = 0;
+                this.decay = 0.02;
+                this.color = '#fff';
+                this.size = 2;
+                this.active = false;
+            }
+            
+            init(x, y, color, size = 2) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.color = color;
+                this.size = size;
+                this.active = true;
+            }
+            
+            update() {
+                if (!this.active) return;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                if (this.life <= 0) this.active = false;
+            }
+            
+            draw(ctx) {
+                if (!this.active) return;
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
+        }
+        
+        class ParticlePool {
+            constructor(size) {
+                this.pool = [];
+                for (let i = 0; i < size; i++) {
+                    this.pool.push(new Particle());
+                }
+            }
+            
+            get() {
+                for (let i = 0; i < this.pool.length; i++) {
+                    if (!this.pool[i].active) return this.pool[i];
+                }
+                return this.pool[Math.floor(Math.random() * this.pool.length)];
+            }
+            
+            update() {
+                for (let i = 0; i < this.pool.length; i++) {
+                    this.pool[i].update();
+                }
+            }
+            
+            draw(ctx) {
+                for (let i = 0; i < this.pool.length; i++) {
+                    this.pool[i].draw(ctx);
+                }
+            }
+            
+            explode(x, y, color, count = 30) {
+                for (let i = 0; i < count; i++) {
+                    const particle = this.get();
+                    particle.init(x, y, color, Math.random() * 4 + 2);
+                }
+            }
+        }
+        
+        const particlePool = new ParticlePool(500);
+        
+        // ============================================================================
+        // SPATIAL HASH GRID FOR O(1) COLLISION DETECTION
+        // ============================================================================
+        class SpatialHashGrid {
+            constructor(cellSize) {
+                this.cellSize = cellSize;
+                this.grid = new Map();
+            }
+            
+            insert(x, y) {
+                const key = this.getKey(x, y);
+                this.grid.set(key, true);
+            }
+            
+            check(x, y) {
+                const key = this.getKey(x, y);
+                return this.grid.has(key);
+            }
+            
+            clear() {
+                this.grid.clear();
+            }
+            
+            getKey(x, y) {
+                const cellX = Math.floor(x / this.cellSize);
+                const cellY = Math.floor(y / this.cellSize);
+                return `${cellX},${cellY}`;
+            }
+        }
+        
+        // ============================================================================
+        // KEYBOARD CONTROL SYSTEM
+        // ============================================================================
+        document.addEventListener('keydown', (e) => {
+            if (gameEngine && gameEngine.running) {
+                // Prevent ALL game keys from scrolling
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'w', 'a', 's', 'd'].includes(e.key)) {
+                    e.preventDefault();
+                }
+                
+                // F for Fullscreen
+                if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    fullscreenManager.toggle();
+                }
+                
+                // P for Pause
+                if (e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    gameEngine.togglePause();
+                }
+                
+                // R for Restart
+                if (e.key === 'r' || e.key === 'R') {
+                    e.preventDefault();
+                    restartGame();
+                }
+                
+                // Pass key to game engine
+                if (gameEngine.handleKeyDown) {
+                    gameEngine.handleKeyDown(e);
+                }
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (gameEngine && gameEngine.handleKeyUp) {
+                gameEngine.handleKeyUp(e);
+            }
+        });
+        
+        // ============================================================================
+        // HUB FUNCTIONS
+        // ============================================================================
+        function startGame(gameName) {
+            currentGame = gameName;
+            // Show setup menu for games that support it
+            if (['tron', 'pong', 'snake'].includes(gameName)) {
+                setupMenu.classList.remove('hidden');
+            } else {
+                // Direct launch for single-player only games
+                gameSettings.mode = 'solo';
+                launchGame();
+            }
+        }
+        
+        function launchGame() {
+            setupMenu.classList.add('hidden');
+            hubContainer.style.display = 'none';
+            gameContainer.classList.remove('hidden');
+            settingsBtn.style.display = 'none';
+            
+            // Set game title
+            gameTitleDisplay.textContent = currentGame.toUpperCase();
+            
+            // Initialize the specific game
+            switch(currentGame) {
+                case 'tron': gameEngine = new TronGame(); break;
+                case 'snake': gameEngine = new SnakeGame(); break;
+                case 'tetris': gameEngine = new TetrisGame(); break;
+                case 'pong': gameEngine = new PongGame(); break;
+                case 'breakout': gameEngine = new BreakoutGame(); break;
+                case 'invaders': gameEngine = new SpaceInvadersGame(); break;
+                case 'asteroids': gameEngine = new AsteroidsGame(); break;
+                case 'flappy': gameEngine = new FlappyBirdGame(); break;
+                case 'match3': gameEngine = new Match3Game(); break;
+                case '2048': gameEngine = new Game2048(); break;
+            }
+            
+            if (gameEngine) {
+                gameEngine.init();
+                startGameLoop();
+            }
+        }
+        
+        function backToHub() {
+            if (gameEngine) {
+                gameEngine.running = false;
+            }
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            gameContainer.classList.add('hidden');
+            gameOverlay.classList.add('hidden');
+            hubContainer.style.display = 'block';
+            settingsBtn.style.display = 'flex';
+            currentGame = null;
+            gameEngine = null;
+        }
+        
+        function restartGame() {
+            gameOverlay.classList.add('hidden');
+            if (gameEngine) {
+                gameEngine.reset();
+            }
+        }
+        
+        function toggleFPS() {
+            showFPS = !showFPS;
+            fpsCounter.classList.toggle('hidden', !showFPS);
+        }
+        
+        // ============================================================================
+        // GAME LOOP WITH 60 FPS AND DELTA-TIME
+        // ============================================================================
+        function startGameLoop() {
+            lastFrameTime = performance.now();
+            lastFpsUpdate = lastFrameTime;
+            frameCount = 0;
+            
+            function loop(timestamp) {
+                if (!gameEngine || !gameEngine.running) return;
+                
+                const deltaTime = timestamp - lastFrameTime;
+                lastFrameTime = timestamp;
+                
+                // FPS calculation
+                frameCount++;
+                if (timestamp - lastFpsUpdate >= 1000) {
+                    fps = frameCount;
+                    frameCount = 0;
+                    lastFpsUpdate = timestamp;
+                    if (showFPS) {
+                        fpsCounter.textContent = `FPS: ${fps}`;
+                    }
+                }
+                
+                // Update and draw
+                if (gameEngine && gameEngine.running && !gameEngine.paused) {
+                    gameEngine.update(deltaTime);
+                }
+                
+                if (gameEngine) {
+                    gameEngine.draw(ctx);
+                }
+                
+                // Update and draw particles
+                particlePool.update();
+                particlePool.draw(ctx);
+                
+                animationId = requestAnimationFrame(loop);
+            }
+            
+            animationId = requestAnimationFrame(loop);
+        }
+        
+        // ============================================================================
+        // SETUP MENU EVENT HANDLERS
+        // ============================================================================
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                gameSettings.mode = this.dataset.mode;
+            });
+        });
+        
+        document.querySelectorAll('[data-difficulty]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                gameSettings.difficulty = this.dataset.difficulty;
+            });
+        });
+        
