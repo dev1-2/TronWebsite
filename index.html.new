@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 ULTIMATE GAMING HUB 🎮</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+            color: #00ffff;
+            overflow-x: hidden;
+        }
+        
+        /* Hub Styles */
+        #hubContainer {
+            min-height: 100vh;
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        #hubContainer header {
+            text-align: center;
+            font-size: clamp(2em, 5vw, 4em);
+            margin-bottom: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff; }
+            to { text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff, 0 0 90px #00ffff; }
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+        
+        .game-card {
+            background: rgba(10, 20, 40, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0,255,255,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+            z-index: 0;
+        }
+        
+        .game-card:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+            border-color: #ff00ff;
+        }
+        
+        .game-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .game-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .game-desc {
+            font-size: 0.9em;
+            opacity: 0.7;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Game Container */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #gameContainer.hidden {
+            display: none;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border-bottom: 2px solid #00ffff;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .game-header button {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        
+        .game-header button:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        #gameTitle {
+            font-size: clamp(1.2em, 3vw, 1.8em);
+            text-shadow: 0 0 10px #00ffff;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        #score {
+            font-size: clamp(1em, 2vw, 1.2em);
+            white-space: nowrap;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            background: #000;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .controls-info {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 800px;
+        }
+        
+        /* Game Over Overlay */
+        #gameOverlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 40, 0.98);
+            backdrop-filter: blur(10px);
+            border: 3px solid #ff00ff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            z-index: 100;
+            min-width: 300px;
+        }
+        
+        #gameOverlay.hidden {
+            display: none;
+        }
+        
+        #gameOverlay h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+        
+        #finalScore {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        
+        .option-btn {
+            margin: 5px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .option-btn:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        /* FPS Counter */
+        #fpsCounter {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #00ff00;
+            z-index: 3000;
+        }
+        
+        #fpsCounter.hidden {
+            display: none;
+        }
+        
+        /* Settings Button */
+        #settingsBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            color: #00ffff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #settingsBtn:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+            transform: rotate(90deg);
+        }
+        
+        /* Setup Menu */
+        #setupMenu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 20, 40, 0.98);
+            backdrop-filter: blur(10px);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            z-index: 2000;
+            min-width: 350px;
+            max-width: 90%;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #setupMenu.hidden {
+            display: none;
+        }
+        
+        .setup-section {
+            margin: 20px 0;
+        }
+        
+        .setup-section h3 {
+            margin-bottom: 15px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        
+        @media (max-width: 768px) {
+            #hubContainer header {
+                font-size: 2em;
+                letter-spacing: 0.1em;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+                padding: 10px;
+                gap: 20px;
+            }
+            
+            .game-card {
+                padding: 20px;
+            }
+            
+            .game-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            #gameTitle {
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- FPS Counter -->
+    <div id="fpsCounter" class="hidden">FPS: 60</div>
+    
+    <!-- Settings Button -->
+    <div id="settingsBtn" onclick="toggleFPS()">⚙</div>
+    
+    <!-- Hub Container (Landing Page) -->
+    <div id="hubContainer">
+        <header>🎮 GAMING HUB 🎮</header>
+        <div class="games-grid">
+            <div class="game-card" onclick="startGame('tron')">
+                <span class="game-icon">🏍️</span>
+                <div class="game-title">TRON</div>
+                <div class="game-desc">Light cycles trail collision</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('snake')">
+                <span class="game-icon">🐍</span>
+                <div class="game-title">SNAKE</div>
+                <div class="game-desc">Classic snake with growth</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('tetris')">
+                <span class="game-icon">🧱</span>
+                <div class="game-title">TETRIS</div>
+                <div class="game-desc">Tetromino line clearing</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('pong')">
+                <span class="game-icon">🏓</span>
+                <div class="game-title">PONG</div>
+                <div class="game-desc">Classic paddle game</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('breakout')">
+                <span class="game-icon">🎯</span>
+                <div class="game-title">BREAKOUT</div>
+                <div class="game-desc">Brick breaker physics</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('invaders')">
+                <span class="game-icon">👾</span>
+                <div class="game-title">SPACE INVADERS</div>
+                <div class="game-desc">Alien shooter defense</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('asteroids')">
+                <span class="game-icon">☄️</span>
+                <div class="game-title">ASTEROIDS</div>
+                <div class="game-desc">Space shooter rotation</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('flappy')">
+                <span class="game-icon">🐦</span>
+                <div class="game-title">FLAPPY BIRD</div>
+                <div class="game-desc">Tap to fly obstacle</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('match3')">
+                <span class="game-icon">💎</span>
+                <div class="game-title">MATCH-3</div>
+                <div class="game-desc">Gem matching puzzle</div>
+            </div>
+            
+            <div class="game-card" onclick="startGame('2048')">
+                <span class="game-icon">🎲</span>
+                <div class="game-title">2048</div>
+                <div class="game-desc">Number sliding puzzle</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Container (Fullscreen Overlay) -->
+    <div id="gameContainer" class="hidden">
+        <div class="game-header">
+            <button onclick="backToHub()">← BACK</button>
+            <button onclick="fullscreenManager.toggle()">⛶ FULLSCREEN (F)</button>
+            <h2 id="gameTitle">GAME</h2>
+            <span id="score">Score: 0</span>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="controls-info" id="controlsInfo">
+            Controls: Arrow Keys | SPACE/P: Pause | R: Restart | F: Fullscreen
+        </div>
+        
+        <!-- Game Over Overlay -->
+        <div id="gameOverlay" class="hidden">
+            <h2 id="gameOverTitle">GAME OVER</h2>
+            <div id="finalScore">Score: 0</div>
+            <button class="option-btn" onclick="restartGame()">PLAY AGAIN (R)</button>
+            <button class="option-btn" onclick="backToHub()">BACK TO HUB</button>
+        </div>
+    </div>
+    
+    <!-- Setup Menu -->
+    <div id="setupMenu" class="hidden">
+        <h2 style="text-align: center; margin-bottom: 30px; text-shadow: 0 0 10px #00ffff;">GAME SETUP</h2>
+        
+        <div class="setup-section">
+            <h3>Mode</h3>
+            <button class="option-btn active" data-mode="solo">SOLO</button>
+            <button class="option-btn" data-mode="vsai">VS AI</button>
+            <button class="option-btn" data-mode="2player">2 PLAYER</button>
+        </div>
+        
+        <div class="setup-section">
+            <h3>AI Difficulty</h3>
+            <button class="option-btn" data-difficulty="easy">EASY</button>
+            <button class="option-btn active" data-difficulty="medium">MEDIUM</button>
+            <button class="option-btn" data-difficulty="hard">HARD</button>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="option-btn" style="border-color: #ff00ff; color: #ff00ff;" onclick="launchGame()">START GAME</button>
+        </div>
+    </div>
+    
+    <script>
