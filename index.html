@@ -443,6 +443,20 @@
     </div>
 
     <script>
+        // ===== SHARED CONSTANTS =====
+        const GAME_CONSTANTS = {
+            CANVAS_WIDTH: 800,
+            CANVAS_HEIGHT: 600,
+            TARGET_FPS: 60,
+            DEFAULT_SPEED: 100, // milliseconds per update
+            COLORS: {
+                NEON: ['#ff0055', '#ff6600', '#ffff00', '#00ff00', '#00ffff', '#0066ff', '#9d00ff'],
+                PLAYER1: '#00ffff',
+                PLAYER2: '#ff6600',
+                BACKGROUND: '#000a1a'
+            }
+        };
+
         // ===== GAME ENGINE =====
         class GameEngine {
             constructor() {
@@ -686,7 +700,7 @@
                 this.direction = {x: 1, y: 0};
                 this.food = this.generateFood();
                 this.score = 0;
-                this.speed = 100;
+                this.speed = GAME_CONSTANTS.DEFAULT_SPEED;
                 this.lastUpdate = 0;
                 this.gameOver = false;
                 
@@ -713,10 +727,22 @@
             }
 
             generateFood() {
-                return {
-                    x: Math.floor(Math.random() * (800 / this.gridSize)),
-                    y: Math.floor(Math.random() * (600 / this.gridSize))
-                };
+                let food;
+                let attempts = 0;
+                const maxAttempts = 100;
+                
+                do {
+                    food = {
+                        x: Math.floor(Math.random() * (800 / this.gridSize)),
+                        y: Math.floor(Math.random() * (600 / this.gridSize))
+                    };
+                    attempts++;
+                } while (
+                    attempts < maxAttempts &&
+                    this.snake.some(segment => segment.x === food.x && segment.y === food.y)
+                );
+                
+                return food;
             }
 
             update(deltaTime) {
@@ -731,7 +757,8 @@
                 head.y += this.direction.y;
 
                 // Check wall collision
-                if (head.x < 0 || head.x >= 800/this.gridSize || head.y < 0 || head.y >= 600/this.gridSize) {
+                if (head.x < 0 || head.x >= GAME_CONSTANTS.CANVAS_WIDTH/this.gridSize || 
+                    head.y < 0 || head.y >= GAME_CONSTANTS.CANVAS_HEIGHT/this.gridSize) {
                     this.gameOver = true;
                     return;
                 }
@@ -1708,7 +1735,7 @@
                 this.grid = [];
                 this.selected = null;
                 this.score = 0;
-                this.colors = ['#ff0055', '#ff6600', '#ffff00', '#00ff00', '#00ffff', '#0066ff', '#9d00ff'];
+                this.colors = GAME_CONSTANTS.COLORS.NEON;
                 this.swapping = false;
                 
                 // Initialize grid
@@ -2215,12 +2242,30 @@
             document.getElementById('toggleFpsBtn').addEventListener('click', toggleFps);
             document.getElementById('toggleGlowBtn').addEventListener('click', toggleGlow);
             
-            // FPS counter update
-            setInterval(() => {
-                if (settings.showFps) {
-                    document.getElementById('fpsCounter').textContent = 'FPS: 60';
+            // FPS counter update with actual measurement
+            let frameCount = 0;
+            let lastFpsTime = performance.now();
+            let actualFps = 60;
+            
+            function updateFps() {
+                frameCount++;
+                const now = performance.now();
+                const elapsed = now - lastFpsTime;
+                
+                if (elapsed >= 1000) {
+                    actualFps = Math.round((frameCount * 1000) / elapsed);
+                    frameCount = 0;
+                    lastFpsTime = now;
+                    
+                    if (settings.showFps) {
+                        document.getElementById('fpsCounter').textContent = 'FPS: ' + actualFps;
+                    }
                 }
-            }, 1000);
+                
+                requestAnimationFrame(updateFps);
+            }
+            
+            updateFps();
         });
 
         // ESC key to go back
