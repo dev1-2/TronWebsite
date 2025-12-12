@@ -1319,16 +1319,449 @@
             }
         }
 
+        // TRON GAME (Enhanced)
+        class TronGame {
+            constructor() {
+                this.gridSize = 10;
+                this.player1 = {
+                    x: 100, y: 300, dx: this.gridSize, dy: 0,
+                    trail: [{x: 100, y: 300}],
+                    color: '#00ffff',
+                    alive: true
+                };
+                this.player2 = {
+                    x: 700, y: 300, dx: -this.gridSize, dy: 0,
+                    trail: [{x: 700, y: 300}],
+                    color: '#ff6600',
+                    alive: true
+                };
+                this.keys = {};
+                this.lastUpdate = 0;
+                this.speed = 80;
+                this.gameOver = false;
+                
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                    if (e.key === 'ArrowUp' && this.player1.dy === 0) {
+                        this.player1.dx = 0; this.player1.dy = -this.gridSize;
+                    } else if (e.key === 'ArrowDown' && this.player1.dy === 0) {
+                        this.player1.dx = 0; this.player1.dy = this.gridSize;
+                    } else if (e.key === 'ArrowLeft' && this.player1.dx === 0) {
+                        this.player1.dx = -this.gridSize; this.player1.dy = 0;
+                    } else if (e.key === 'ArrowRight' && this.player1.dx === 0) {
+                        this.player1.dx = this.gridSize; this.player1.dy = 0;
+                    }
+                    // Player 2
+                    if ((e.key === 'w' || e.key === 'W') && this.player2.dy === 0) {
+                        this.player2.dx = 0; this.player2.dy = -this.gridSize;
+                    } else if ((e.key === 's' || e.key === 'S') && this.player2.dy === 0) {
+                        this.player2.dx = 0; this.player2.dy = this.gridSize;
+                    } else if ((e.key === 'a' || e.key === 'A') && this.player2.dx === 0) {
+                        this.player2.dx = -this.gridSize; this.player2.dy = 0;
+                    } else if ((e.key === 'd' || e.key === 'D') && this.player2.dx === 0) {
+                        this.player2.dx = this.gridSize; this.player2.dy = 0;
+                    }
+                });
+            }
+
+            checkCollision(player) {
+                // Wall collision
+                if (player.x < 0 || player.x >= 800 || player.y < 0 || player.y >= 600) return true;
+                
+                // Trail collision
+                for (let p of this.player1.trail) {
+                    if (player.x === p.x && player.y === p.y) return true;
+                }
+                for (let p of this.player2.trail) {
+                    if (player.x === p.x && player.y === p.y) return true;
+                }
+                return false;
+            }
+
+            update(deltaTime) {
+                if (this.gameOver) return;
+
+                this.lastUpdate += deltaTime;
+                if (this.lastUpdate < this.speed) return;
+                this.lastUpdate = 0;
+
+                // Move players
+                this.player1.x += this.player1.dx;
+                this.player1.y += this.player1.dy;
+                this.player2.x += this.player2.dx;
+                this.player2.y += this.player2.dy;
+
+                // Check collisions
+                const p1Collision = this.checkCollision(this.player1);
+                const p2Collision = this.checkCollision(this.player2);
+
+                if (p1Collision && p2Collision) {
+                    this.gameOver = true;
+                } else if (p1Collision) {
+                    this.player1.alive = false;
+                    this.gameOver = true;
+                } else if (p2Collision) {
+                    this.player2.alive = false;
+                    this.gameOver = true;
+                }
+
+                // Add to trails
+                this.player1.trail.push({x: this.player1.x, y: this.player1.y});
+                this.player2.trail.push({x: this.player2.x, y: this.player2.y});
+            }
+
+            render(ctx) {
+                // Draw trails
+                ctx.shadowBlur = 15;
+                
+                // Player 1 trail
+                ctx.strokeStyle = this.player1.color;
+                ctx.shadowColor = this.player1.color;
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                if (this.player1.trail.length > 0) {
+                    ctx.moveTo(this.player1.trail[0].x + 5, this.player1.trail[0].y + 5);
+                    for (let i = 1; i < this.player1.trail.length; i++) {
+                        ctx.lineTo(this.player1.trail[i].x + 5, this.player1.trail[i].y + 5);
+                    }
+                    ctx.stroke();
+                }
+
+                // Player 2 trail
+                ctx.strokeStyle = this.player2.color;
+                ctx.shadowColor = this.player2.color;
+                ctx.beginPath();
+                if (this.player2.trail.length > 0) {
+                    ctx.moveTo(this.player2.trail[0].x + 5, this.player2.trail[0].y + 5);
+                    for (let i = 1; i < this.player2.trail.length; i++) {
+                        ctx.lineTo(this.player2.trail[i].x + 5, this.player2.trail[i].y + 5);
+                    }
+                    ctx.stroke();
+                }
+
+                // Draw player heads
+                if (this.player1.alive) {
+                    ctx.fillStyle = this.player1.color;
+                    ctx.shadowColor = this.player1.color;
+                    ctx.shadowBlur = 20;
+                    ctx.fillRect(this.player1.x, this.player1.y, this.gridSize, this.gridSize);
+                }
+                
+                if (this.player2.alive) {
+                    ctx.fillStyle = this.player2.color;
+                    ctx.shadowColor = this.player2.color;
+                    ctx.fillRect(this.player2.x, this.player2.y, this.gridSize, this.gridSize);
+                }
+                
+                ctx.shadowBlur = 0;
+
+                if (this.gameOver) {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.font = '40px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('GAME OVER', 400, 300);
+                    const winner = this.player1.alive ? 'Player 1' : 'Player 2';
+                    ctx.font = '25px Courier New';
+                    ctx.fillText(winner + ' Wins!', 400, 350);
+                }
+            }
+        }
+
+        // PAC-MAN GAME (Simplified)
+        class PacManGame {
+            constructor() {
+                this.pacman = { x: 400, y: 300, size: 15, direction: 0, mouthOpen: 0 };
+                this.ghosts = [
+                    { x: 200, y: 200, color: '#ff0000', dx: 2, dy: 0 },
+                    { x: 600, y: 200, color: '#ffb8ff', dx: -2, dy: 0 },
+                    { x: 200, y: 400, color: '#00ffff', dx: 0, dy: 2 },
+                    { x: 600, y: 400, color: '#ffb852', dx: 0, dy: -2 }
+                ];
+                this.dots = [];
+                this.score = 0;
+                this.speed = 3;
+                this.keys = {};
+                
+                // Generate dots
+                for (let x = 50; x < 800; x += 40) {
+                    for (let y = 50; y < 600; y += 40) {
+                        this.dots.push({ x, y, eaten: false });
+                    }
+                }
+                
+                document.addEventListener('keydown', (e) => this.keys[e.key] = true);
+                document.addEventListener('keyup', (e) => this.keys[e.key] = false);
+            }
+
+            update(deltaTime) {
+                // Pac-Man movement
+                if (this.keys['ArrowUp']) { this.pacman.direction = -Math.PI / 2; this.pacman.y -= this.speed; }
+                if (this.keys['ArrowDown']) { this.pacman.direction = Math.PI / 2; this.pacman.y += this.speed; }
+                if (this.keys['ArrowLeft']) { this.pacman.direction = Math.PI; this.pacman.x -= this.speed; }
+                if (this.keys['ArrowRight']) { this.pacman.direction = 0; this.pacman.x += this.speed; }
+                
+                this.pacman.mouthOpen = (this.pacman.mouthOpen + 0.1) % (Math.PI * 2);
+
+                // Keep in bounds
+                this.pacman.x = Math.max(20, Math.min(780, this.pacman.x));
+                this.pacman.y = Math.max(20, Math.min(580, this.pacman.y));
+
+                // Eat dots
+                this.dots.forEach(dot => {
+                    if (!dot.eaten) {
+                        const dist = Math.hypot(this.pacman.x - dot.x, this.pacman.y - dot.y);
+                        if (dist < 20) {
+                            dot.eaten = true;
+                            this.score += 10;
+                            document.getElementById('currentGameScore').textContent = 'Score: ' + this.score;
+                        }
+                    }
+                });
+
+                // Move ghosts
+                this.ghosts.forEach(ghost => {
+                    ghost.x += ghost.dx;
+                    ghost.y += ghost.dy;
+                    
+                    // Bounce off walls
+                    if (ghost.x < 30 || ghost.x > 770) ghost.dx *= -1;
+                    if (ghost.y < 30 || ghost.y > 570) ghost.dy *= -1;
+                    
+                    // Random direction change
+                    if (Math.random() < 0.01) {
+                        const dirs = [{dx: 2, dy: 0}, {dx: -2, dy: 0}, {dx: 0, dy: 2}, {dx: 0, dy: -2}];
+                        const dir = dirs[Math.floor(Math.random() * dirs.length)];
+                        ghost.dx = dir.dx;
+                        ghost.dy = dir.dy;
+                    }
+                });
+            }
+
+            render(ctx) {
+                // Draw dots
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#ffff00';
+                this.dots.forEach(dot => {
+                    if (!dot.eaten) {
+                        ctx.beginPath();
+                        ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                // Draw Pac-Man
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffff00';
+                ctx.beginPath();
+                const mouth = Math.abs(Math.sin(this.pacman.mouthOpen)) * 0.4;
+                ctx.arc(this.pacman.x, this.pacman.y, this.pacman.size, 
+                    this.pacman.direction + mouth, this.pacman.direction + Math.PI * 2 - mouth);
+                ctx.lineTo(this.pacman.x, this.pacman.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw ghosts
+                this.ghosts.forEach(ghost => {
+                    ctx.fillStyle = ghost.color;
+                    ctx.shadowColor = ghost.color;
+                    ctx.beginPath();
+                    ctx.arc(ghost.x, ghost.y, 15, Math.PI, 0);
+                    ctx.lineTo(ghost.x + 15, ghost.y + 20);
+                    ctx.lineTo(ghost.x + 10, ghost.y + 15);
+                    ctx.lineTo(ghost.x + 5, ghost.y + 20);
+                    ctx.lineTo(ghost.x, ghost.y + 15);
+                    ctx.lineTo(ghost.x - 5, ghost.y + 20);
+                    ctx.lineTo(ghost.x - 10, ghost.y + 15);
+                    ctx.lineTo(ghost.x - 15, ghost.y + 20);
+                    ctx.lineTo(ghost.x - 15, ghost.y);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Eyes
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 0;
+                    ctx.fillRect(ghost.x - 7, ghost.y - 5, 5, 8);
+                    ctx.fillRect(ghost.x + 2, ghost.y - 5, 5, 8);
+                    ctx.fillStyle = '#0000ff';
+                    ctx.fillRect(ghost.x - 5, ghost.y - 3, 3, 4);
+                    ctx.fillRect(ghost.x + 4, ghost.y - 3, 3, 4);
+                });
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // ASTEROIDS GAME
+        class AsteroidsGame {
+            constructor() {
+                this.ship = { x: 400, y: 300, angle: 0, vx: 0, vy: 0, size: 15 };
+                this.asteroids = [];
+                this.bullets = [];
+                this.score = 0;
+                this.keys = {};
+                
+                // Create initial asteroids
+                for (let i = 0; i < 5; i++) {
+                    this.createAsteroid(Math.random() * 800, Math.random() * 600, 40);
+                }
+                
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                    if (e.key === ' ') {
+                        this.bullets.push({
+                            x: this.ship.x + Math.cos(this.ship.angle) * 15,
+                            y: this.ship.y + Math.sin(this.ship.angle) * 15,
+                            vx: Math.cos(this.ship.angle) * 8,
+                            vy: Math.sin(this.ship.angle) * 8
+                        });
+                    }
+                });
+                document.addEventListener('keyup', (e) => this.keys[e.key] = false);
+            }
+
+            createAsteroid(x, y, size) {
+                this.asteroids.push({
+                    x, y, size,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1
+                });
+            }
+
+            update(deltaTime) {
+                // Ship controls
+                if (this.keys['ArrowLeft']) this.ship.angle -= 0.1;
+                if (this.keys['ArrowRight']) this.ship.angle += 0.1;
+                if (this.keys['ArrowUp']) {
+                    this.ship.vx += Math.cos(this.ship.angle) * 0.2;
+                    this.ship.vy += Math.sin(this.ship.angle) * 0.2;
+                }
+
+                // Apply friction
+                this.ship.vx *= 0.99;
+                this.ship.vy *= 0.99;
+
+                // Move ship
+                this.ship.x += this.ship.vx;
+                this.ship.y += this.ship.vy;
+
+                // Wrap around screen
+                if (this.ship.x < 0) this.ship.x = 800;
+                if (this.ship.x > 800) this.ship.x = 0;
+                if (this.ship.y < 0) this.ship.y = 600;
+                if (this.ship.y > 600) this.ship.y = 0;
+
+                // Move asteroids
+                this.asteroids.forEach(asteroid => {
+                    asteroid.x += asteroid.vx;
+                    asteroid.y += asteroid.vy;
+                    asteroid.rotation += asteroid.rotationSpeed;
+                    
+                    // Wrap around
+                    if (asteroid.x < -50) asteroid.x = 850;
+                    if (asteroid.x > 850) asteroid.x = -50;
+                    if (asteroid.y < -50) asteroid.y = 650;
+                    if (asteroid.y > 650) asteroid.y = -50;
+                });
+
+                // Move bullets
+                this.bullets = this.bullets.filter(bullet => {
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    return bullet.x > 0 && bullet.x < 800 && bullet.y > 0 && bullet.y < 600;
+                });
+
+                // Collision detection
+                this.bullets.forEach(bullet => {
+                    this.asteroids.forEach((asteroid, index) => {
+                        const dist = Math.hypot(bullet.x - asteroid.x, bullet.y - asteroid.y);
+                        if (dist < asteroid.size) {
+                            this.asteroids.splice(index, 1);
+                            bullet.x = -100; // Remove bullet
+                            this.score += 100;
+                            document.getElementById('currentGameScore').textContent = 'Score: ' + this.score;
+                            
+                            // Split asteroid
+                            if (asteroid.size > 15) {
+                                this.createAsteroid(asteroid.x, asteroid.y, asteroid.size / 2);
+                                this.createAsteroid(asteroid.x, asteroid.y, asteroid.size / 2);
+                            }
+                        }
+                    });
+                });
+            }
+
+            render(ctx) {
+                // Draw ship
+                ctx.save();
+                ctx.translate(this.ship.x, this.ship.y);
+                ctx.rotate(this.ship.angle);
+                ctx.strokeStyle = '#00ffff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.ship.size, 0);
+                ctx.lineTo(-this.ship.size, -this.ship.size / 2);
+                ctx.lineTo(-this.ship.size / 2, 0);
+                ctx.lineTo(-this.ship.size, this.ship.size / 2);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+
+                // Draw asteroids
+                ctx.strokeStyle = '#888888';
+                ctx.shadowColor = '#888888';
+                this.asteroids.forEach(asteroid => {
+                    ctx.save();
+                    ctx.translate(asteroid.x, asteroid.y);
+                    ctx.rotate(asteroid.rotation);
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const radius = asteroid.size * (0.8 + Math.random() * 0.4);
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                });
+
+                // Draw bullets
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowColor = '#ffff00';
+                this.bullets.forEach(bullet => {
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+
         // Initialize specific game
         function initializeGame(gameId) {
             let game;
             
             switch(gameId) {
+                case 'tron':
+                    game = new TronGame();
+                    break;
                 case 'snake':
                     game = new SnakeGame();
                     break;
                 case 'tetris':
                     game = new TetrisGame();
+                    break;
+                case 'pacman':
+                    game = new PacManGame();
                     break;
                 case 'pong':
                     game = new PongGame();
@@ -1338,6 +1771,9 @@
                     break;
                 case 'invaders':
                     game = new SpaceInvadersGame();
+                    break;
+                case 'asteroids':
+                    game = new AsteroidsGame();
                     break;
                 case 'flappy':
                     game = new FlappyBirdGame();
