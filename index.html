@@ -563,9 +563,9 @@
         <div id="aiDifficulty" class="hidden">
             <h3>AI Difficulty:</h3>
             <div class="difficulty-buttons">
-                <button class="difficulty-btn" onclick="setDifficulty('easy')">Easy</button>
-                <button class="difficulty-btn selected" onclick="setDifficulty('medium')">Medium</button>
-                <button class="difficulty-btn" onclick="setDifficulty('hard')">Hard</button>
+                <button class="difficulty-btn" onclick="setDifficulty('easy', this)">Easy</button>
+                <button class="difficulty-btn selected" onclick="setDifficulty('medium', this)">Medium</button>
+                <button class="difficulty-btn" onclick="setDifficulty('hard', this)">Hard</button>
             </div>
         </div>
         
@@ -666,6 +666,8 @@
             
             adjustCanvas() {
                 const canvas = document.getElementById('gameCanvas');
+                if (!canvas) return;
+                
                 const maxWidth = window.innerWidth;
                 const maxHeight = window.innerHeight - 150; // Account for header/footer
                 const aspectRatio = canvas.width / canvas.height;
@@ -681,6 +683,8 @@
             
             resetCanvas() {
                 const canvas = document.getElementById('gameCanvas');
+                if (!canvas) return;
+                
                 canvas.style.width = '';
                 canvas.style.height = '';
             }
@@ -1090,12 +1094,14 @@
             startGame(gameId);
         }
 
-        function setDifficulty(difficulty) {
+        function setDifficulty(difficulty, target) {
             currentGameSettings.difficulty = difficulty;
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
-            event.target.classList.add('selected');
+            if (target) {
+                target.classList.add('selected');
+            }
         }
 
         function startGameWithSettings() {
