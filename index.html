@@ -1098,6 +1098,9 @@
         // ============================================================================
         // COLLISION DETECTION - OPTIMIZED WITH SPATIAL HASH GRID
         // ============================================================================
+        
+        // Main collision detection using Spatial Hash Grid for O(1) performance
+        // Replaces the old O(n) array iteration approach
         function checkCollisionAt(x, y) {
             // Wall collision (early exit)
             if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
@@ -1109,6 +1112,7 @@
         }
 
         // Optimized position check for AI using Set (O(1))
+        // Used by AI flood-fill algorithm for space calculations
         function isPositionOccupiedFast(x, y) {
             if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
                 return true;
@@ -1522,9 +1526,11 @@
             // Handle fullscreen changes
             document.addEventListener('fullscreenchange', () => {
                 if (document.fullscreenElement) {
-                    fullscreenBtn.textContent = '⛶';
+                    fullscreenBtn.textContent = '⛶'; // Exit fullscreen icon
+                    fullscreenBtn.title = 'Vollbild verlassen';
                 } else {
-                    fullscreenBtn.textContent = '⛶';
+                    fullscreenBtn.textContent = '⛶'; // Enter fullscreen icon
+                    fullscreenBtn.title = 'Vollbild';
                 }
             });
         });
