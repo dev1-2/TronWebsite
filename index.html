@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Courier New', monospace;
-            background:  linear-gradient(to bottom, #000000, #001a33);
+            background: linear-gradient(to bottom, #000000, #001a33);
             color: #00ffff;
             display: flex;
             justify-content: center;
@@ -31,7 +31,7 @@
             font-size: 4em;
             text-transform: uppercase;
             letter-spacing: 0.3em;
-            margin-bottom:  20px;
+            margin-bottom: 20px;
             text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
             animation: glow 2s ease-in-out infinite alternate;
         }
@@ -41,7 +41,7 @@
             to { text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff, 0 0 90px #00ffff; }
         }
 
-        #menu, #gameOver {
+        #menu, #gameOver, #pauseMenu {
             background: rgba(0, 26, 51, 0.9);
             border: 3px solid #00ffff;
             border-radius: 10px;
@@ -49,11 +49,11 @@
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
         }
 
-        . btn {
+        .btn {
             display: inline-block;
             margin: 15px;
             padding: 15px 40px;
-            font-size:  1.5em;
+            font-size: 1.5em;
             font-family: 'Courier New', monospace;
             text-transform: uppercase;
             background: transparent;
@@ -66,20 +66,26 @@
 
         .btn:hover {
             background: #00ffff;
-            color:  #000;
+            color: #000;
             box-shadow: 0 0 20px #00ffff;
             transform: scale(1.05);
         }
 
-        . btn. player2 {
+        .btn.player2 {
             border-color: #ff6600;
             color: #ff6600;
         }
 
         .btn.player2:hover {
-            background:  #ff6600;
+            background: #ff6600;
             color: #000;
             box-shadow: 0 0 20px #ff6600;
+        }
+
+        .btn.small {
+            font-size: 1em;
+            padding: 10px 20px;
+            margin: 5px;
         }
 
         canvas {
@@ -96,7 +102,7 @@
             letter-spacing: 0.1em;
         }
 
-        . score {
+        .score {
             display: inline-block;
             margin: 0 30px;
             padding: 10px 20px;
@@ -105,7 +111,7 @@
         }
 
         .score.player1 {
-            border-color:  #00ffff;
+            border-color: #00ffff;
             color: #00ffff;
             text-shadow: 0 0 10px #00ffff;
         }
@@ -116,7 +122,7 @@
             text-shadow: 0 0 10px #ff6600;
         }
 
-        #gameOver {
+        #gameOver, #pauseMenu {
             display: none;
             position: absolute;
             top: 50%;
@@ -125,14 +131,63 @@
             z-index: 10;
         }
 
+        #countdown {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8em;
+            font-weight: bold;
+            text-shadow: 0 0 50px #00ffff, 0 0 100px #00ffff;
+            z-index: 10;
+            animation: countdownPulse 1s ease-in-out;
+        }
+
+        @keyframes countdownPulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
         #winner {
             font-size: 2em;
             margin-bottom: 20px;
             text-transform: uppercase;
         }
 
-        . hidden {
-            display: none ! important;
+        #roundInfo {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .difficulty-selector {
+            margin: 20px 0;
+        }
+
+        .difficulty-btn {
+            margin: 5px;
+        }
+
+        .difficulty-btn.active {
+            background: #00ffff;
+            color: #000;
+        }
+
+        .round-selector {
+            margin: 20px 0;
+        }
+
+        #gameInfo {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.9em;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -142,13 +197,37 @@
         
         <div id="menu">
             <h2 style="margin-bottom: 30px;">Wähle deinen Modus</h2>
-            <button class="btn" onclick="startGame('single')">Single Player</button>
-            <button class="btn player2" onclick="startGame('multi')">2 Player</button>
+            <button class="btn" onclick="showDifficultyMenu()">Single Player</button>
+            <button class="btn player2" onclick="showRoundMenu('multi')">2 Player</button>
             <div style="margin-top: 30px; font-size: 0.9em; opacity: 0.7;">
                 <p>Spieler 1: Pfeiltasten ↑ ↓ ← →</p>
                 <p>Spieler 2: WASD</p>
+                <p>Pause: P</p>
             </div>
         </div>
+
+        <div id="difficultyMenu" class="hidden" style="background: rgba(0, 26, 51, 0.9); border: 3px solid #00ffff; border-radius: 10px; padding: 40px; box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);">
+            <h2 style="margin-bottom: 30px;">Wähle Schwierigkeitsgrad</h2>
+            <div class="difficulty-selector">
+                <button class="btn small difficulty-btn" onclick="setDifficulty('easy')">Easy</button>
+                <button class="btn small difficulty-btn active" onclick="setDifficulty('medium')">Medium</button>
+                <button class="btn small difficulty-btn" onclick="setDifficulty('hard')">Hard</button>
+            </div>
+            <button class="btn" onclick="showRoundMenu('single')">Weiter</button>
+            <button class="btn player2" onclick="backToMainMenu()">Zurück</button>
+        </div>
+
+        <div id="roundMenu" class="hidden" style="background: rgba(0, 26, 51, 0.9); border: 3px solid #00ffff; border-radius: 10px; padding: 40px; box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);">
+            <h2 style="margin-bottom: 30px;">Wähle Rundenzahl</h2>
+            <div class="round-selector">
+                <button class="btn small" onclick="startGameWithRounds(3)">Best of 3</button>
+                <button class="btn small" onclick="startGameWithRounds(5)">Best of 5</button>
+                <button class="btn small" onclick="startGameWithRounds(7)">Best of 7</button>
+            </div>
+            <button class="btn player2" onclick="backFromRoundMenu()">Zurück</button>
+        </div>
+
+        <div id="countdown"></div>
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
@@ -157,30 +236,65 @@
             <div class="score player2">Spieler 2: <span id="score2">0</span></div>
         </div>
 
+        <div id="gameInfo"></div>
+
+        <div id="pauseMenu">
+            <h2 style="margin-bottom: 30px;">PAUSE</h2>
+            <button class="btn" onclick="resumeGame()">Weiter spielen</button>
+            <button class="btn player2" onclick="backToMenu()">Hauptmenü</button>
+        </div>
+
         <div id="gameOver">
             <h2 id="winner"></h2>
+            <div id="roundInfo"></div>
             <button class="btn" onclick="restart()">Nochmal spielen</button>
             <button class="btn player2" onclick="backToMenu()">Hauptmenü</button>
         </div>
     </div>
 
     <script>
+        // ============================================================================
+        // CONSTANTS AND DOM ELEMENTS
+        // ============================================================================
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const menu = document.getElementById('menu');
+        const difficultyMenu = document.getElementById('difficultyMenu');
+        const roundMenu = document.getElementById('roundMenu');
         const gameOverDiv = document.getElementById('gameOver');
+        const pauseMenu = document.getElementById('pauseMenu');
         const scoreBoard = document.getElementById('scoreBoard');
         const score1El = document.getElementById('score1');
         const score2El = document.getElementById('score2');
         const winnerEl = document.getElementById('winner');
+        const roundInfoEl = document.getElementById('roundInfo');
+        const countdownEl = document.getElementById('countdown');
+        const gameInfoEl = document.getElementById('gameInfo');
 
-        let gameMode = '';
-        let gameRunning = false;
-        let animationId;
-
+        // Game constants
         const gridSize = 10;
-        const speed = 100;
+        const baseSpeed = 80; // ms per frame
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
 
+        // ============================================================================
+        // GAME STATE
+        // ============================================================================
+        let gameMode = '';
+        let difficulty = 'medium';
+        let gameRunning = false;
+        let gamePaused = false;
+        let animationId;
+        let lastUpdateTime = 0;
+        let maxRounds = 3;
+        let currentRound = 0;
+        let particles = [];
+
+        // Input buffer for smooth controls
+        let player1InputBuffer = null;
+        let player2InputBuffer = null;
+
+        // Player objects
         let player1 = {
             x: 100,
             y: 300,
@@ -188,7 +302,8 @@
             dy: 0,
             trail: [],
             color: '#00ffff',
-            score: 0
+            score: 0,
+            alive: true
         };
 
         let player2 = {
@@ -197,131 +312,320 @@
             dx: -gridSize,
             dy: 0,
             trail: [],
-            color:  '#ff6600',
-            score: 0
+            color: '#ff6600',
+            score: 0,
+            alive: true
         };
 
-        let lastUpdateTime = 0;
+        // ============================================================================
+        // MENU FUNCTIONS
+        // ============================================================================
+        function showDifficultyMenu() {
+            menu.classList.add('hidden');
+            difficultyMenu.classList.remove('hidden');
+        }
 
-        function startGame(mode) {
+        function showRoundMenu(mode) {
             gameMode = mode;
             menu.classList.add('hidden');
+            difficultyMenu.classList.add('hidden');
+            roundMenu.classList.remove('hidden');
+        }
+
+        function backToMainMenu() {
+            difficultyMenu.classList.add('hidden');
+            menu.classList.remove('hidden');
+        }
+
+        function backFromRoundMenu() {
+            roundMenu.classList.add('hidden');
+            if (gameMode === 'single') {
+                difficultyMenu.classList.remove('hidden');
+            } else {
+                menu.classList.remove('hidden');
+            }
+        }
+
+        function setDifficulty(level) {
+            difficulty = level;
+            // Update button states
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function startGameWithRounds(rounds) {
+            maxRounds = rounds;
+            currentRound = 0;
+            player1.score = 0;
+            player2.score = 0;
+            roundMenu.classList.add('hidden');
+            startGame();
+        }
+
+        // ============================================================================
+        // GAME INITIALIZATION
+        // ============================================================================
+        function startGame() {
             canvas.style.display = 'block';
             scoreBoard.style.display = 'block';
-            gameOverDiv. style.display = 'none';
+            gameInfoEl.style.display = 'block';
+            gameOverDiv.style.display = 'none';
+            pauseMenu.style.display = 'none';
             
             resetPlayers();
-            gameRunning = true;
-            lastUpdateTime = Date.now();
-            gameLoop();
+            updateScores();
+            updateGameInfo();
+            showCountdown();
+        }
+
+        function showCountdown() {
+            let count = 3;
+            countdownEl.style.display = 'block';
+            countdownEl.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.textContent = count;
+                } else if (count === 0) {
+                    countdownEl.textContent = 'GO!';
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownEl.style.display = 'none';
+                    gameRunning = true;
+                    gamePaused = false;
+                    lastUpdateTime = Date.now();
+                    gameLoop();
+                }
+            }, 1000);
         }
 
         function resetPlayers() {
+            currentRound++;
+            
+            // Symmetrische Startpositionen
             player1 = {
-                x:  100,
+                x: 100,
                 y: 300,
                 dx: gridSize,
                 dy: 0,
                 trail: [{x: 100, y: 300}],
                 color: '#00ffff',
-                score:  player1.score
+                score: player1.score,
+                alive: true
             };
 
             player2 = {
                 x: 700,
-                y:  300,
+                y: 300,
                 dx: -gridSize,
                 dy: 0,
                 trail: [{x: 700, y: 300}],
                 color: '#ff6600',
-                score: player2.score
+                score: player2.score,
+                alive: true
             };
 
-            updateScores();
+            player1InputBuffer = null;
+            player2InputBuffer = null;
+            particles = [];
         }
 
         function updateScores() {
             score1El.textContent = player1.score;
-            score2El. textContent = player2.score;
+            score2El.textContent = player2.score;
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (! gameRunning) return;
+        function updateGameInfo() {
+            const roundsToWin = Math.ceil(maxRounds / 2);
+            gameInfoEl.textContent = `Runde ${currentRound} von ${maxRounds} | Best of ${maxRounds} (${roundsToWin} Siege nötig) | Schwierigkeit: ${difficulty.toUpperCase()}`;
+            gameInfoEl.style.display = 'block';
+        }
 
-            // Spieler 1 - Pfeiltasten
-            if (e.key === 'ArrowUp' && player1.dy === 0) {
-                player1.dx = 0;
-                player1.dy = -gridSize;
-            } else if (e.key === 'ArrowDown' && player1.dy === 0) {
-                player1.dx = 0;
-                player1.dy = gridSize;
-            } else if (e. key === 'ArrowLeft' && player1.dx === 0) {
-                player1.dx = -gridSize;
-                player1.dy = 0;
-            } else if (e. key === 'ArrowRight' && player1.dx === 0) {
-                player1.dx = gridSize;
-                player1.dy = 0;
+        // ============================================================================
+        // INPUT HANDLING
+        // ============================================================================
+        document.addEventListener('keydown', (e) => {
+            // Pause handling
+            if (e.key === 'p' || e.key === 'P') {
+                if (gameRunning && !gamePaused) {
+                    pauseGame();
+                } else if (gamePaused) {
+                    resumeGame();
+                }
+                return;
             }
 
-            // Spieler 2 - WASD (nur im 2-Player Modus)
+            if (!gameRunning || gamePaused) return;
+
+            // Player 1 - Arrow keys with input buffer
+            if (e.key === 'ArrowUp' && player1.dy === 0) {
+                player1InputBuffer = { dx: 0, dy: -gridSize };
+            } else if (e.key === 'ArrowDown' && player1.dy === 0) {
+                player1InputBuffer = { dx: 0, dy: gridSize };
+            } else if (e.key === 'ArrowLeft' && player1.dx === 0) {
+                player1InputBuffer = { dx: -gridSize, dy: 0 };
+            } else if (e.key === 'ArrowRight' && player1.dx === 0) {
+                player1InputBuffer = { dx: gridSize, dy: 0 };
+            }
+
+            // Player 2 - WASD (only in multiplayer mode) with input buffer
             if (gameMode === 'multi') {
-                if (e.key === 'w' && player2.dy === 0) {
-                    player2.dx = 0;
-                    player2.dy = -gridSize;
-                } else if (e.key === 's' && player2.dy === 0) {
-                    player2.dx = 0;
-                    player2.dy = gridSize;
-                } else if (e.key === 'a' && player2.dx === 0) {
-                    player2.dx = -gridSize;
-                    player2.dy = 0;
-                } else if (e.key === 'd' && player2.dx === 0) {
-                    player2.dx = gridSize;
-                    player2.dy = 0;
+                if ((e.key === 'w' || e.key === 'W') && player2.dy === 0) {
+                    player2InputBuffer = { dx: 0, dy: -gridSize };
+                } else if ((e.key === 's' || e.key === 'S') && player2.dy === 0) {
+                    player2InputBuffer = { dx: 0, dy: gridSize };
+                } else if ((e.key === 'a' || e.key === 'A') && player2.dx === 0) {
+                    player2InputBuffer = { dx: -gridSize, dy: 0 };
+                } else if ((e.key === 'd' || e.key === 'D') && player2.dx === 0) {
+                    player2InputBuffer = { dx: gridSize, dy: 0 };
                 }
             }
         });
 
+        function pauseGame() {
+            gamePaused = true;
+            pauseMenu.style.display = 'block';
+        }
+
+        function resumeGame() {
+            gamePaused = false;
+            pauseMenu.style.display = 'none';
+            lastUpdateTime = Date.now();
+        }
+
+        // ============================================================================
+        // AI ALGORITHMS
+        // ============================================================================
+        
+        // Flood-fill algorithm to calculate available space
+        function calculateAvailableSpace(startX, startY, maxDepth = 100) {
+            const visited = new Set();
+            const queue = [{x: startX, y: startY, depth: 0}];
+            let count = 0;
+
+            while (queue.length > 0 && count < maxDepth) {
+                const {x, y, depth} = queue.shift();
+                const key = `${x},${y}`;
+
+                if (visited.has(key)) continue;
+                if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) continue;
+                if (isPositionOccupied(x, y)) continue;
+                if (depth > maxDepth) continue;
+
+                visited.add(key);
+                count++;
+
+                // Add neighbors
+                queue.push({x: x + gridSize, y: y, depth: depth + 1});
+                queue.push({x: x - gridSize, y: y, depth: depth + 1});
+                queue.push({x: x, y: y + gridSize, depth: depth + 1});
+                queue.push({x: x, y: y - gridSize, depth: depth + 1});
+            }
+
+            return count;
+        }
+
+        function isPositionOccupied(x, y) {
+            // Check trails (excluding current head positions)
+            for (let i = 0; i < player1.trail.length - 1; i++) {
+                if (player1.trail[i].x === x && player1.trail[i].y === y) return true;
+            }
+            for (let i = 0; i < player2.trail.length - 1; i++) {
+                if (player2.trail[i].x === x && player2.trail[i].y === y) return true;
+            }
+            return false;
+        }
+
         function aiMove() {
             const directions = [
-                {dx: 0, dy: -gridSize}, // oben
-                {dx: 0, dy: gridSize},  // unten
-                {dx: -gridSize, dy: 0}, // links
-                {dx: gridSize, dy: 0}   // rechts
+                {dx: 0, dy: -gridSize, name: 'up'},
+                {dx: 0, dy: gridSize, name: 'down'},
+                {dx: -gridSize, dy: 0, name: 'left'},
+                {dx: gridSize, dy: 0, name: 'right'}
             ];
 
-            // Filtere die aktuelle Rückwärtsrichtung aus
+            // Filter out backwards direction
             const validDirections = directions.filter(dir => {
                 return !(dir.dx === -player2.dx && dir.dy === -player2.dy);
             });
 
-            // Bewerte jede Richtung
+            // Difficulty-based error rate and look-ahead depth
+            let errorRate = 0;
+            let lookAheadDepth = 50;
+            
+            if (difficulty === 'easy') {
+                errorRate = 0.15; // 15% chance of random move
+                lookAheadDepth = 30;
+            } else if (difficulty === 'medium') {
+                errorRate = 0.05; // 5% chance of random move
+                lookAheadDepth = 50;
+            } else { // hard
+                errorRate = 0.02; // 2% chance of random move
+                lookAheadDepth = 80;
+            }
+
+            // Random move for difficulty adjustment
+            if (Math.random() < errorRate) {
+                const safeDirections = validDirections.filter(dir => {
+                    const newX = player2.x + dir.dx;
+                    const newY = player2.y + dir.dy;
+                    return !checkCollisionAt(newX, newY);
+                });
+                
+                if (safeDirections.length > 0) {
+                    const randomDir = safeDirections[Math.floor(Math.random() * safeDirections.length)];
+                    player2InputBuffer = { dx: randomDir.dx, dy: randomDir.dy };
+                    return;
+                }
+            }
+
+            // Evaluate each direction
             let bestDirection = null;
             let bestScore = -Infinity;
 
             for (let dir of validDirections) {
                 const newX = player2.x + dir.dx;
-                const newY = player2.y + dir. dy;
+                const newY = player2.y + dir.dy;
 
-                if (checkCollision(newX, newY, player2)) {
-                    continue; // Diese Richtung führt zu Kollision
+                // Immediate collision check
+                if (checkCollisionAt(newX, newY)) {
+                    continue;
                 }
 
-                // Berechne Distanz zu Spieler 1 (weiter weg ist besser)
+                // Calculate available space using flood-fill
+                const availableSpace = calculateAvailableSpace(newX, newY, lookAheadDepth);
+
+                // Calculate distance to player 1
                 const distToPlayer1 = Math.sqrt(
                     Math.pow(newX - player1.x, 2) + Math.pow(newY - player1.y, 2)
                 );
 
-                // Berechne freien Raum in dieser Richtung
-                let freeSpace = 0;
-                let testX = newX;
-                let testY = newY;
-                while (! checkCollision(testX, testY, player2) && freeSpace < 50) {
-                    testX += dir.dx;
-                    testY += dir.dy;
-                    freeSpace++;
+                // Calculate distance to center (staying central is often good)
+                const centerX = CANVAS_WIDTH / 2;
+                const centerY = CANVAS_HEIGHT / 2;
+                const distToCenter = Math.sqrt(
+                    Math.pow(newX - centerX, 2) + Math.pow(newY - centerY, 2)
+                );
+
+                // Strategic scoring
+                let score = availableSpace * 20; // Space is most important
+
+                // Calculate player 1's available space for strategic decision
+                const player1Space = calculateAvailableSpace(player1.x, player1.y, 30);
+                
+                if (player1Space < availableSpace) {
+                    // We have more space - be aggressive (move closer)
+                    score -= distToPlayer1 * 0.3;
+                } else {
+                    // Opponent has more space - be defensive (keep distance)
+                    score += distToPlayer1 * 0.2;
                 }
 
-                const score = freeSpace * 10 + distToPlayer1 * 0.1;
+                // Prefer staying near center
+                score -= distToCenter * 0.1;
 
                 if (score > bestScore) {
                     bestScore = score;
@@ -330,27 +634,27 @@
             }
 
             if (bestDirection) {
-                player2.dx = bestDirection.dx;
-                player2.dy = bestDirection.dy;
+                player2InputBuffer = { dx: bestDirection.dx, dy: bestDirection.dy };
             }
         }
 
-        function checkCollision(x, y, player) {
-            // Wand-Kollision
-            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+        // ============================================================================
+        // COLLISION DETECTION
+        // ============================================================================
+        function checkCollisionAt(x, y) {
+            // Wall collision
+            if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) {
                 return true;
             }
 
-            // Kollision mit Spieler 1 Trail
-            for (let segment of player1.trail) {
-                if (segment.x === x && segment.y === y) {
+            // Trail collision (excluding own current head position)
+            for (let i = 0; i < player1.trail.length - 1; i++) {
+                if (player1.trail[i].x === x && player1.trail[i].y === y) {
                     return true;
                 }
             }
-
-            // Kollision mit Spieler 2 Trail
-            for (let segment of player2.trail) {
-                if (segment.x === x && segment.y === y) {
+            for (let i = 0; i < player2.trail.length - 1; i++) {
+                if (player2.trail[i].x === x && player2.trail[i].y === y) {
                     return true;
                 }
             }
@@ -358,98 +662,220 @@
             return false;
         }
 
+        // ============================================================================
+        // PARTICLE SYSTEM
+        // ============================================================================
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.decay = 0.02;
+                this.color = color;
+                this.size = Math.random() * 4 + 2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
+
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        // ============================================================================
+        // GAME UPDATE
+        // ============================================================================
         function update() {
-            // KI-Bewegung im Single Player Modus
+            // Apply input buffer
+            if (player1InputBuffer) {
+                player1.dx = player1InputBuffer.dx;
+                player1.dy = player1InputBuffer.dy;
+                player1InputBuffer = null;
+            }
+
+            // AI movement in single player mode
             if (gameMode === 'single') {
                 aiMove();
             }
 
-            // Bewege Spieler
-            player1.x += player1.dx;
-            player1.y += player1.dy;
-            player2.x += player2.dx;
-            player2.y += player2.dy;
+            if (player2InputBuffer) {
+                player2.dx = player2InputBuffer.dx;
+                player2.dy = player2InputBuffer.dy;
+                player2InputBuffer = null;
+            }
 
-            // Füge neue Position zum Trail hinzu
+            // Calculate new positions
+            const newP1X = player1.x + player1.dx;
+            const newP1Y = player1.y + player1.dy;
+            const newP2X = player2.x + player2.dx;
+            const newP2Y = player2.y + player2.dy;
+
+            // Check collisions BEFORE moving
+            const p1Collision = checkCollisionAt(newP1X, newP1Y);
+            const p2Collision = checkCollisionAt(newP2X, newP2Y);
+
+            // Handle collisions
+            if (p1Collision && p2Collision) {
+                createExplosion(player1.x, player1.y, player1.color);
+                createExplosion(player2.x, player2.y, player2.color);
+                endRound('Unentschieden!', null);
+                return;
+            } else if (p1Collision) {
+                createExplosion(player1.x, player1.y, player1.color);
+                player2.score++;
+                updateScores();
+                endRound(gameMode === 'single' ? 'KI gewinnt!' : 'Spieler 2 gewinnt!', 2);
+                return;
+            } else if (p2Collision) {
+                createExplosion(player2.x, player2.y, player2.color);
+                player1.score++;
+                updateScores();
+                endRound('Spieler 1 gewinnt!', 1);
+                return;
+            }
+
+            // Move players
+            player1.x = newP1X;
+            player1.y = newP1Y;
+            player2.x = newP2X;
+            player2.y = newP2Y;
+
+            // Add to trail
             player1.trail.push({x: player1.x, y: player1.y});
             player2.trail.push({x: player2.x, y: player2.y});
 
-            // Prüfe Kollisionen
-            const p1Collision = checkCollision(player1.x, player1.y, player1);
-            const p2Collision = checkCollision(player2.x, player2.y, player2);
-
-            if (p1Collision && p2Collision) {
-                endGame('Unentschieden! ');
-            } else if (p1Collision) {
-                player2.score++;
-                updateScores();
-                endGame(gameMode === 'single' ? 'KI gewinnt!' : 'Spieler 2 gewinnt! ');
-            } else if (p2Collision) {
-                player1.score++;
-                updateScores();
-                endGame('Spieler 1 gewinnt!');
-            }
+            // Update particles
+            particles = particles.filter(p => {
+                p.update();
+                return !p.isDead();
+            });
         }
 
+        // ============================================================================
+        // DRAWING
+        // ============================================================================
         function draw() {
-            // Lösche Canvas
+            // Clear canvas
             ctx.fillStyle = '#000a1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-            // Zeichne Grid
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            // Draw subtle grid
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
             ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += gridSize * 5) {
+            for (let i = 0; i < CANVAS_WIDTH; i += gridSize * 5) {
                 ctx.beginPath();
                 ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas. height);
+                ctx.lineTo(i, CANVAS_HEIGHT);
                 ctx.stroke();
             }
-            for (let i = 0; i < canvas.height; i += gridSize * 5) {
-                ctx. beginPath();
+            for (let i = 0; i < CANVAS_HEIGHT; i += gridSize * 5) {
+                ctx.beginPath();
                 ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width, i);
+                ctx.lineTo(CANVAS_WIDTH, i);
                 ctx.stroke();
             }
 
-            // Zeichne Spieler 1 Trail mit Glow
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = player1.color;
-            ctx.strokeStyle = player1.color;
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            for (let i = 0; i < player1.trail.length - 1; i++) {
-                ctx.moveTo(player1.trail[i].x + gridSize/2, player1.trail[i].y + gridSize/2);
-                ctx.lineTo(player1.trail[i+1]. x + gridSize/2, player1.trail[i+1]. y + gridSize/2);
-            }
-            ctx.stroke();
+            // Draw player 1 trail with fade effect
+            drawTrail(player1);
+            
+            // Draw player 2 trail with fade effect
+            drawTrail(player2);
 
-            // Zeichne Spieler 1 Kopf
-            ctx.fillStyle = player1.color;
-            ctx. fillRect(player1.x, player1.y, gridSize, gridSize);
+            // Draw player heads with direction indicators
+            drawPlayer(player1);
+            drawPlayer(player2);
 
-            // Zeichne Spieler 2 Trail mit Glow
-            ctx.shadowColor = player2.color;
-            ctx.strokeStyle = player2.color;
-            ctx.beginPath();
-            for (let i = 0; i < player2.trail.length - 1; i++) {
-                ctx.moveTo(player2.trail[i].x + gridSize/2, player2.trail[i].y + gridSize/2);
-                ctx.lineTo(player2.trail[i+1].x + gridSize/2, player2.trail[i+1].y + gridSize/2);
-            }
-            ctx.stroke();
-
-            // Zeichne Spieler 2 Kopf
-            ctx.fillStyle = player2.color;
-            ctx.fillRect(player2.x, player2.y, gridSize, gridSize);
+            // Draw particles
+            particles.forEach(p => p.draw(ctx));
 
             ctx.shadowBlur = 0;
         }
 
+        function drawTrail(player) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = player.color;
+            ctx.strokeStyle = player.color;
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Draw trail with fade effect on older segments
+            for (let i = 0; i < player.trail.length - 1; i++) {
+                const opacity = 0.3 + (i / player.trail.length) * 0.7; // Fade from 0.3 to 1.0
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.moveTo(player.trail[i].x + gridSize/2, player.trail[i].y + gridSize/2);
+                ctx.lineTo(player.trail[i+1].x + gridSize/2, player.trail[i+1].y + gridSize/2);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawPlayer(player) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            ctx.fillStyle = player.color;
+            
+            // Draw head
+            ctx.fillRect(player.x, player.y, gridSize, gridSize);
+
+            // Draw direction indicator (arrow/wedge)
+            ctx.save();
+            ctx.translate(player.x + gridSize/2, player.y + gridSize/2);
+            
+            // Calculate rotation based on direction
+            let angle = 0;
+            if (player.dx > 0) angle = 0;
+            else if (player.dx < 0) angle = Math.PI;
+            else if (player.dy > 0) angle = Math.PI/2;
+            else if (player.dy < 0) angle = -Math.PI/2;
+            
+            ctx.rotate(angle);
+            
+            // Draw arrow
+            ctx.beginPath();
+            ctx.moveTo(gridSize/2 + 3, 0);
+            ctx.lineTo(-gridSize/4, -gridSize/3);
+            ctx.lineTo(-gridSize/4, gridSize/3);
+            ctx.closePath();
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // ============================================================================
+        // GAME LOOP
+        // ============================================================================
         function gameLoop() {
-            if (!gameRunning) return;
+            if (!gameRunning || gamePaused) return;
 
             const currentTime = Date.now();
-            if (currentTime - lastUpdateTime >= speed) {
+            if (currentTime - lastUpdateTime >= baseSpeed) {
                 update();
                 lastUpdateTime = currentTime;
             }
@@ -458,29 +884,69 @@
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        function endGame(message) {
+        // ============================================================================
+        // GAME END
+        // ============================================================================
+        function endRound(message, winner) {
             gameRunning = false;
             cancelAnimationFrame(animationId);
-            winnerEl.textContent = message;
-            gameOverDiv.style.display = 'block';
+            
+            // Continue animation for particles
+            const particleAnimation = () => {
+                draw();
+                if (particles.length > 0) {
+                    requestAnimationFrame(particleAnimation);
+                }
+            };
+            particleAnimation();
+
+            // Check if match is over
+            const roundsToWin = Math.ceil(maxRounds / 2);
+            if (player1.score >= roundsToWin || player2.score >= roundsToWin) {
+                // Match over
+                const matchWinner = player1.score >= roundsToWin ? 'Spieler 1' : (gameMode === 'single' ? 'KI' : 'Spieler 2');
+                winnerEl.textContent = `${matchWinner} gewinnt das Match!`;
+                roundInfoEl.textContent = `Endstand: ${player1.score} - ${player2.score}`;
+                
+                setTimeout(() => {
+                    gameOverDiv.style.display = 'block';
+                }, 1500);
+            } else {
+                // Continue to next round
+                winnerEl.textContent = message;
+                roundInfoEl.textContent = `Stand: ${player1.score} - ${player2.score} | Nächste Runde in 3 Sekunden...`;
+                gameOverDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    gameOverDiv.style.display = 'none';
+                    resetPlayers();
+                    updateGameInfo();
+                    showCountdown();
+                }, 3000);
+            }
         }
 
         function restart() {
+            currentRound = 0;
+            player1.score = 0;
+            player2.score = 0;
             gameOverDiv.style.display = 'none';
-            resetPlayers();
-            gameRunning = true;
-            lastUpdateTime = Date. now();
-            gameLoop();
+            startGame();
         }
 
         function backToMenu() {
             gameOverDiv.style.display = 'none';
+            pauseMenu.style.display = 'none';
             canvas.style.display = 'none';
             scoreBoard.style.display = 'none';
-            menu.classList. remove('hidden');
+            gameInfoEl.style.display = 'none';
+            menu.classList.remove('hidden');
             player1.score = 0;
             player2.score = 0;
+            currentRound = 0;
             updateScores();
+            gameRunning = false;
+            gamePaused = false;
         }
     </script>
 </body>
